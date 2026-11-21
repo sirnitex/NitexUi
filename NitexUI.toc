@@ -1,8 +1,8 @@
-## Interface: 120105
+## Interface: 120105, 16001
 ## Title: |cff33ccffNitex|rUI
-## Notes: A lightweight UI addon for World of Warcraft Retail.
+## Notes: A lightweight UI addon for World of Warcraft Retail and Forever.
 ## Author: Nitex
-## Version: 0.3.0
+## Version: 0.4.0
 ## IconTexture: Interface\Icons\INV_Misc_Gear_01
 ## SavedVariables: NitexUIDB
 ## SavedVariablesPerCharacter: NitexUICharDB

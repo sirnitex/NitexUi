@@ -11,6 +11,12 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 - Cache globale funksjoner som `local` øverst i filen når de brukes i varme stier.
 - Ingen eksterne biblioteker (Ace3, LibStub osv.) med mindre eieren eksplisitt ber om det.
 
+## 1b. To klienter: Retail og Forever
+- Addonet skal virke på både Retail (Midnight, Interface 120105) og WoW Forever (Interface 16001). Begge bruker Mainline-API-et og "secret values".
+- Én `.toc` med `## Interface: 120105, 16001`. Oppdater begge tallene ved nye patcher.
+- Bruk `ns.isRetail` / `ns.isForever` bare der klientene faktisk er ulike. Guard API-er som kanskje mangler i én klient (`if C_X and C_X.Func then`).
+- Hver endring synkes til begge AddOns-mappene: `G:\World of Warcraft\_retail_\Interface\AddOns\NitexUI` og `G:\World of Warcraft\_forever_\Interface\AddOns\NitexUI`.
+
 ## 2. Lua-versjon
 - Kun Lua 5.1, slik WoW-klienten bruker. Ingen `goto`, ingen heltallsdivisjon `//`, ingen bit-operatorer `& | ~` (bruk `bit.band` osv.), ingen `table.unpack` (bruk `unpack`).
 

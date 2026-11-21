@@ -4,7 +4,14 @@
 local addonName, ns = ...
 
 ns.name = addonName
-ns.version = C_AddOns.GetAddOnMetadata(addonName, "Version") or "dev"
+
+local GetAddOnMetadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+ns.version = GetAddOnMetadata(addonName, "Version") or "dev"
+
+-- Client flavour. Retail (Midnight) and Forever share the same Mainline UI/API,
+-- so this is only for the rare spot where they differ.
+ns.isRetail  = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+ns.isForever = not ns.isRetail
 ns.modules = {}
 ns.L = ns.L or {}
 

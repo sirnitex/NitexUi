@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.0]
+- WoW Forever support (Interface 16001) in the same .toc as Retail.
+- Client flavour flags ns.isRetail / ns.isForever; guards for Settings API and metadata.
+
 ## [0.3.0]
 - Pixel perfect system (Core/Pixel.lua): 1px borders and lines are exactly one physical pixel at any UI scale.
 - Options window rebuilt on the pixel perfect helpers.

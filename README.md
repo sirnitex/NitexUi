@@ -1,6 +1,7 @@
 # NitexUI
 
-Et UI-addon for World of Warcraft Retail (Midnight, Interface 120105).
+Et UI-addon for World of Warcraft Retail (Midnight, Interface 120105) og WoW Forever (Interface 16001).
+Begge klientene bruker samme moderne API, så én `.toc` dekker begge.
 
 ## Installasjon (utvikling)
 
@@ -8,6 +9,12 @@ Legg (eller symlink) mappen `NitexUI` i:
 
 ```
 World of Warcraft\_retail_\Interface\AddOns\NitexUI
+```
+
+eller for Forever:
+
+```
+World of Warcraft\_forever_\Interface\AddOns\NitexUI
 ```
 
 Mappenavnet **må** være `NitexUI` – samme som `.toc`-filen.

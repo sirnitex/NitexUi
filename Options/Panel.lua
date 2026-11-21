@@ -282,12 +282,15 @@ do
     btn:SetText(L["BTN_OPEN_OPTIONS"])
     btn:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -14)
     btn:SetScript("OnClick", function()
-        HideUIPanel(SettingsPanel)
+        if SettingsPanel then HideUIPanel(SettingsPanel) end
         Options:Open()
     end)
 
-    local category = Settings.RegisterCanvasLayoutCategory(canvas, "NitexUI")
-    Settings.RegisterAddOnCategory(category)
+    -- Guarded so a client without the modern Settings API simply skips the launcher.
+    if Settings and Settings.RegisterCanvasLayoutCategory then
+        local category = Settings.RegisterCanvasLayoutCategory(canvas, "NitexUI")
+        Settings.RegisterAddOnCategory(category)
+    end
 end
 
 -- Addon compartment (the addon button by the minimap), set in the .toc
