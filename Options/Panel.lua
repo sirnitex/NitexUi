@@ -131,9 +131,15 @@ function Options.Columns(page, gap)
 end
 
 --- Continue full-width page layout below the taller of two columns.
+--- A zero-height spacer at the LEFT edge, below the taller column, becomes the new cursor,
+--- so the next section always starts at the left (never under the right column).
 function Options.EndColumns(page, left, right)
     -- Heights are tracked while adding (all widgets have fixed heights), so no layout query is needed.
-    page.cursor = (left.height >= right.height) and left.cursor or right.cursor
+    local h = math.max(left.height, right.height)
+    local spacer = CreateFrame("Frame", nil, page)
+    PP.Point(spacer, "TOPLEFT", left.holder, "TOPLEFT", 0, -h)
+    PP.Size(spacer, CONTENT_W, 1)
+    page.cursor = spacer
 end
 
 ---------------------------------------------------------------------------

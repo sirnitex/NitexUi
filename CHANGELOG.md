@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.11.1]
+- Fix: a section after two columns started under the right column when it was the taller one.
+
 ## [0.11.0]
 - Profile system rebuilt in ElvUI/AceDB style, native (no libraries):
   per-character profile keys, default profile for all other characters, new/duplicate/reset/copy/delete.
