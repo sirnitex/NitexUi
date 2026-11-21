@@ -252,8 +252,7 @@ StaticPopupDialogs["NITEXUI_RESET"] = {
     button1 = YES,
     button2 = NO,
     OnAccept = function()
-        ns:ResetDatabase()
-        ReloadUI()
+        ns:ResetProfile()
     end,
     timeout = 0,
     whileDead = true,
@@ -261,10 +260,10 @@ StaticPopupDialogs["NITEXUI_RESET"] = {
     preferredIndex = 3,
 }
 
-Options:RegisterPage{ key = "general", label = L["PAGE_GENERAL"], order = 10, build = function(parent)
-    local p = NewPage(parent, L["PAGE_GENERAL"], L["PAGE_GENERAL_DESC"])
+local function BuildGeneralMain(parent)
+    local p = NewPage(parent)
 
-    p:Add(W.Header(p, L["SECTION_MINIMAP"]), 22)
+    p:Add(W.Header(p, L["SECTION_MINIMAP"]), 18)
     p:Add(W.Toggle(p, L["OPT_MINIMAP"], L["OPT_MINIMAP_DESC"],
         function() return ns:IsModuleEnabled("MinimapButton") end,
         function(v) ns:SetModuleEnabled("MinimapButton", v) end), 10)
@@ -276,9 +275,21 @@ Options:RegisterPage{ key = "general", label = L["PAGE_GENERAL"], order = 10, bu
 
     p:Add(W.Header(p, L["SECTION_DATA"]), 26)
     p:Add(W.Paragraph(p, L["RESET_DESC"]), 10)
-    p:Add(W.Button(p, L["BTN_RESET"], 160, function() StaticPopup_Show("NITEXUI_RESET") end), 12, true)
+    p:Add(W.Button(p, L["BTN_RESET"], 160, function() StaticPopup_Show("NITEXUI_RESET", ns.profileName) end), 12, true)
     return p
-end }
+end
+
+Options:RegisterPage{
+    key = "general",
+    label = L["PAGE_GENERAL"],
+    desc = L["PAGE_GENERAL_DESC"],
+    order = 10,
+    subtabs = {
+        { key = "main",     label = L["SUB_GENERAL"],  build = BuildGeneralMain },
+        -- Options/Pages/Profiles.lua defines Options.BuildProfiles (loaded after this file).
+        { key = "profiles", label = L["SUB_PROFILES"], build = function(parent) return Options.BuildProfiles(parent) end },
+    },
+}
 
 Options:RegisterPage{ key = "about", label = L["PAGE_ABOUT"], order = 90, build = function(parent)
     local p = NewPage(parent, L["PAGE_ABOUT"], L["PAGE_ABOUT_DESC"])

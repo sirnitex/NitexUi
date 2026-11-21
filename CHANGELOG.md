@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.0]
+- Profiles (General > Profiles): create, duplicate, copy from, delete, reset.
+- Per-character profile or "Account default"; a default profile for all characters (also new ones).
+- Existing settings are migrated into a profile named "Default".
+- Dropdowns can now have changing item lists.
+
 ## [0.9.1]
 - Minimap button now follows the minimap edge while dragging (OnUpdate only while the mouse is held).
 

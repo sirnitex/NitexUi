@@ -274,24 +274,74 @@ end
 ---------------------------------------------------------------------------
 -- Dropdown
 --   W.Dropdown(parent, label, width, items, getter, setter, fontFor)
---   items  = array of { value = ..., text = ... }
+--   items  = array of { value = ..., text = ... }, or a function returning one
+--            (re-read on every refresh, for lists that change, e.g. profiles)
 --   fontFor(value) -> font file, optional: each row (and the button) previews that font.
--- The list is a plain child frame of the button, built once. No menus, no OnUpdate.
+--   dd.placeholder = text shown when the current value matches no item.
+-- The list is a plain child frame of the button; rows are created once and reused.
 ---------------------------------------------------------------------------
 local DD_BTN_H, DD_ROW_H = 26, 24
 local openList -- only one list open at a time
 
+local function DDRow_OnClick(row)
+    local dd = row.owner
+    dd:Close()
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+    dd.setter(row.value)
+    dd:Refresh()
+end
+
+local function DDRow_OnEnter(row) row.hl:Show() end
+local function DDRow_OnLeave(row) row.hl:Hide() end
+
+local function Dropdown_GetRow(self, i)
+    local row = self.rows[i]
+    if row then return row end
+    row = CreateFrame("Button", nil, self.list)
+    PP.Size(row, self.width, DD_ROW_H)
+    PP.Point(row, "TOPLEFT", self.list, "TOPLEFT", 0, -1 - (i - 1) * DD_ROW_H)
+    row.hl = W.Fill(row, "BACKGROUND", T.elementHover)
+    row.hl:SetAllPoints()
+    row.hl:Hide()
+    row.check = W.Fill(row, "ARTWORK", T.accent)
+    PP.Point(row.check, "TOPLEFT", row, "TOPLEFT", 0, 0)
+    PP.Point(row.check, "BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0)
+    PP.PixelWidth(row.check, 2)
+    row.text = W.Text(row, W.FontNormal, "")
+    row.text:SetPoint("LEFT", 10, 0)
+    row.owner = self
+    row:SetScript("OnClick", DDRow_OnClick)
+    row:SetScript("OnEnter", DDRow_OnEnter)
+    row:SetScript("OnLeave", DDRow_OnLeave)
+    self.rows[i] = row
+    return row
+end
+
+local function Dropdown_SetItems(self, items)
+    self.items = items
+    for i = 1, #items do
+        local item, row = items[i], self:GetRow(i)
+        row.value = item.value
+        row.text:SetText(item.text)
+        if self.fontFor then row.text:SetFont(self.fontFor(item.value), 12, "") end
+        row:Show()
+    end
+    for i = #items + 1, #self.rows do self.rows[i]:Hide() end
+    PP.Height(self.list, math.max(#items, 1) * DD_ROW_H + 2)
+end
+
 local function Dropdown_Refresh(self)
+    if self.itemsFunc then self:SetItems(self.itemsFunc()) end
     local value = self.getter()
-    local text = value
+    local text
     for i = 1, #self.items do
         local item = self.items[i]
-        if item.value == value then text = item.text end
-        local row = self.rows[i]
-        row.check:SetShown(item.value == value)
+        local selected = item.value == value
+        if selected then text = item.text end
+        self.rows[i].check:SetShown(selected)
     end
-    self.button.text:SetText(text)
-    if self.fontFor then
+    self.button.text:SetText(text or self.placeholder or "")
+    if self.fontFor and text then
         self.button.text:SetFont(self.fontFor(value), 12, "")
     end
 end
@@ -307,27 +357,21 @@ local function DDButton_OnClick(button)
         dd:Close()
     else
         if openList then openList:Hide() end
+        dd:Refresh()
         dd.list:Show()
         openList = dd.list
         PlaySound(SOUNDKIT.IG_MAINMENU_OPTION)
     end
 end
 
-local function DDRow_OnClick(row)
-    local dd = row.owner
-    dd.setter(row.value)
-    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-    dd:Close()
-    dd:Refresh()
-end
-
-local function DDRow_OnEnter(row) row.hl:Show() end
-local function DDRow_OnLeave(row) row.hl:Hide() end
-
 function W.Dropdown(parent, label, width, items, getter, setter, fontFor)
     local dd = CreateFrame("Frame", nil, parent)
     PP.Size(dd, width, 18 + DD_BTN_H)
-    dd.items, dd.getter, dd.setter, dd.fontFor = items, getter, setter, fontFor
+    dd.width, dd.getter, dd.setter, dd.fontFor = width, getter, setter, fontFor
+    if type(items) == "function" then
+        dd.itemsFunc = items
+        items = items()
+    end
 
     local title = W.Text(dd, W.FontSmall, label)
     title:SetPoint("TOPLEFT")
@@ -354,7 +398,7 @@ function W.Dropdown(parent, label, width, items, getter, setter, fontFor)
     -- List (child of the button, drawn above everything in the window)
     local list = CreateFrame("Frame", nil, button)
     list:SetFrameStrata("DIALOG")
-    PP.Size(list, width, #items * DD_ROW_H + 2)
+    PP.Width(list, width)
     PP.Point(list, "TOPLEFT", button, "BOTTOMLEFT", 0, -2)
     list:EnableMouse(true)
     W.Fill(list, "BACKGROUND", T.header):SetAllPoints()
@@ -363,31 +407,12 @@ function W.Dropdown(parent, label, width, items, getter, setter, fontFor)
     dd.list = list
 
     dd.rows = {}
-    for i = 1, #items do
-        local item = items[i]
-        local row = CreateFrame("Button", nil, list)
-        PP.Size(row, width, DD_ROW_H)
-        PP.Point(row, "TOPLEFT", list, "TOPLEFT", 0, -1 - (i - 1) * DD_ROW_H)
-        row.hl = W.Fill(row, "BACKGROUND", T.elementHover)
-        row.hl:SetAllPoints()
-        row.hl:Hide()
-        row.check = W.Fill(row, "ARTWORK", T.accent)
-        PP.Point(row.check, "TOPLEFT", row, "TOPLEFT", 0, 0)
-        PP.Point(row.check, "BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0)
-        PP.PixelWidth(row.check, 2)
-        local text = W.Text(row, W.FontNormal, item.text)
-        text:SetPoint("LEFT", 10, 0)
-        if fontFor then text:SetFont(fontFor(item.value), 12, "") end
-        row.owner, row.value = dd, item.value
-        row:SetScript("OnClick", DDRow_OnClick)
-        row:SetScript("OnEnter", DDRow_OnEnter)
-        row:SetScript("OnLeave", DDRow_OnLeave)
-        dd.rows[i] = row
-    end
-
+    dd.GetRow = Dropdown_GetRow
+    dd.SetItems = Dropdown_SetItems
     dd.Refresh = Dropdown_Refresh
     dd.Close = Dropdown_Close
     dd:SetScript("OnHide", Dropdown_Close)
+    dd:SetItems(items)
     dd:Refresh()
     return dd
 end

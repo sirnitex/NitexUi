@@ -35,7 +35,7 @@ NitexUI.toc        Metadata og lasterekkefølge
 Locales/           Tekststrenger (enUS er standard)
 Core/Init.lua      Namespace, event-system, modulsystem, oppstart
 Core/Utils.lua     Print/Debug og hjelpefunksjoner
-Core/Database.lua  SavedVariables med standardverdier
+Core/Database.lua  SavedVariables med profiler (ns.db = aktiv profil)
 Core/Theme.lua     Fargetema (aksent #33ccff)
 Core/Pixel.lua     Pixel perfect-hjelpere (borders, størrelser, ankere)
 Core/Commands.lua  /nitex og /nui
