@@ -43,8 +43,18 @@ local function BuildColors(parent)
         function() return db.quest.color end,
         Changed), 8)
 
-    -- Right: enemy types
-    right:Add(W.Header(p, L["SECTION_TYPES"]))
+    -- Right: tapped (Forever only) + enemy types
+    if ns.isForever then
+        right:Add(W.Header(p, L["SECTION_TAPPED"]))
+        right:Add(W.ColorRow(p, L["OPT_TAPPED"],
+            function() return db.tapped.enabled end,
+            function(v) db.tapped.enabled = v end,
+            function() return db.tapped.color end,
+            Changed), 8)
+        right:Add(W.Header(p, L["SECTION_TYPES"]), 18)
+    else
+        right:Add(W.Header(p, L["SECTION_TYPES"]))
+    end
     for i = 1, #M.typeOrder do
         local key = M.typeOrder[i]
         local entry = db.types[key]
@@ -56,7 +66,7 @@ local function BuildColors(parent)
     end
 
     Options.EndColumns(p, left, right)
-    p:Add(W.Paragraph(p, L["NPCOLORS_NOTE"]), 18)
+    p:Add(W.Paragraph(p, ns.isForever and L["NPCOLORS_NOTE_FOREVER"] or L["NPCOLORS_NOTE"]), 18)
     return p
 end
 

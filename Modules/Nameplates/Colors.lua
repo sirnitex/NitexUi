@@ -1,9 +1,11 @@
 -- NitexUI: Nameplates > Health Colors
 --
 -- Recolours the health bar of Blizzard's OWN enemy nameplates. No custom nameplates.
--- Priority: Threat > Quest mob > Enemy type. If nothing applies, Blizzard's colour stays.
+-- Priority: Tapped (Forever only) > Threat > Quest mob > Enemy type.
+-- If nothing applies, Blizzard's colour stays.
 --
 -- APIs (all native, all secret-checked):
+--   UnitIsTapDenied(unit)                       Forever: tagged by someone else, no loot for you
 --   UnitThreatSituation("player", unit)        threat status 0-3 (type only, never the raw value)
 --   C_QuestLog.UnitIsRelatedToActiveQuest(unit) quest mob
 --   UnitIsQuestBoss(unit)                       quest kill target
@@ -30,7 +32,7 @@ local UnitThreatSituation, UnitClassification, UnitCanAttack, UnitIsPlayer =
       UnitThreatSituation, UnitClassification, UnitCanAttack, UnitIsPlayer
 local issecretvalue = issecretvalue or function() return false end
 local UnitIsRelatedToActiveQuest = C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest
-local UnitIsQuestBoss, UnitIsBossMob = UnitIsQuestBoss, UnitIsBossMob
+local UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied = UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied
 
 ---------------------------------------------------------------------------
 -- Defaults
@@ -39,6 +41,7 @@ local function C(r, g, b) return { r, g, b } end
 
 ns.defaults.nameplates = ns.defaults.nameplates or {}
 ns.defaults.nameplates.colors = {
+    tapped = { enabled = true, color = C(0.55, 0.55, 0.55) }, -- Forever only
     threat = {
         enabled = true,
         groupOnly = true,
@@ -111,6 +114,12 @@ local function Compute(unit)
     if issecretvalue(attackable) or not attackable then return nil end
     local player = UnitIsPlayer(unit)
     if issecretvalue(player) or player then return nil end
+
+    -- 0. Tapped by someone else (Forever only): always wins, you cannot loot it.
+    if ns.isForever and db.tapped.enabled and UnitIsTapDenied then
+        local tapped = UnitIsTapDenied(unit)
+        if not issecretvalue(tapped) and tapped then return db.tapped.color end
+    end
 
     -- 1. Threat
     local t = db.threat
@@ -236,6 +245,7 @@ function M:NAME_PLATE_UNIT_ADDED(_, unit)   Attach(unit) end
 function M:NAME_PLATE_UNIT_REMOVED(_, unit) Detach(unit) end
 function M:UNIT_THREAT_LIST_UPDATE(_, unit) if active[unit] then Update(unit) end end
 function M:UNIT_CLASSIFICATION_CHANGED(_, unit) if active[unit] then Update(unit) end end
+function M:UnitChanged(_, unit) if active[unit] then Update(unit) end end
 function M:QUEST_LOG_UPDATE() UpdateAll() end
 function M:GROUP_ROSTER_UPDATE() UpdateAll() end
 function M:RoleChanged() UpdateRole(); UpdateAll() end
@@ -250,6 +260,12 @@ local EVENTS = {
     PLAYER_ROLES_ASSIGNED = "RoleChanged",
     PLAYER_SPECIALIZATION_CHANGED = "RoleChanged",
 }
+
+-- Forever: a mob turning grey (tagged by someone else) is signalled through its faction/flags.
+if ns.isForever then
+    EVENTS.UNIT_FACTION = "UnitChanged"
+    EVENTS.UNIT_FLAGS = "UnitChanged"
+end
 
 function M:OnEnable()
     db = ns.db.nameplates.colors

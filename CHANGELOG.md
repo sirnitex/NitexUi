@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.8.1]
+- Forever: mobs tagged by another player (UnitIsTapDenied) get the tapped colour with top priority.
+
 ## [0.8.0]
 - Nameplates page with sub-tabs. First sub-module: Health Colors.
 - Health Colors recolours Blizzard's own enemy nameplates: threat (role-aware) > quest mob > enemy type.

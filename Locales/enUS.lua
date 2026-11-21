@@ -87,6 +87,9 @@ L["TYPE_ELITE"] = "Elite"
 L["TYPE_RARE"] = "Rare"
 L["TYPE_NORMAL"] = "Normal"
 L["TYPE_TRIVIAL"] = "Trivial"
+L["SECTION_TAPPED"] = "Tapped"
+L["OPT_TAPPED"] = "Tagged by someone else"
+L["NPCOLORS_NOTE_FOREVER"] = "Priority: tapped, then threat, then quest, then enemy type. Tapped always wins: you cannot loot that mob. Anything not coloured keeps Blizzard's colour. Threat follows your role. Values the game keeps secret are skipped."
 L["NPCOLORS_NOTE"] = "Priority: threat, then quest, then enemy type. Anything not coloured keeps Blizzard's colour. Threat follows your role (tank or not). Values the game keeps secret are skipped."
 
 -- Blizzard settings launcher
