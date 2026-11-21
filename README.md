@@ -30,6 +30,7 @@ Core/Init.lua      Namespace, event-system, modulsystem, oppstart
 Core/Utils.lua     Print/Debug og hjelpefunksjoner
 Core/Database.lua  SavedVariables med standardverdier
 Core/Theme.lua     Fargetema (aksent #33ccff)
+Core/Pixel.lua     Pixel perfect-hjelpere (borders, størrelser, ankere)
 Core/Commands.lua  /nitex og /nui
 Options/           Innstillingsvinduet (widgets + panel)
 Modules/           Én fil per funksjon – start fra Example.lua

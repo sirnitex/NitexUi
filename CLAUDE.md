@@ -25,5 +25,13 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 - Ingen egne beregninger når API-et kan gi svaret.
 - Ingen automatisering som spillet ikke selv legger opp til.
 
-## 5. Varsle før noe FPS-tungt
+## 5. Pixel perfect på alle UI scales
+- Alle 1px borders, linjer og outlines skal være nøyaktig én fysisk skjermpiksel, skarpe, på enhver UI scale og oppløsning.
+- Bruk alltid `ns.PP` (Core/Pixel.lua): `PP.Border`, `PP.Size`/`Width`/`Height`, `PP.Point`, `PP.PixelWidth`/`PixelHeight`, og `W.Fill` (som skrur av Blizzards texture-snapping).
+- Aldri `PixelUtil.SetHeight(x, 1)` for 1px-linjer: det runder 1 UI-enhet og kan gi 2px.
+- Rammer med border/fyll ankres i hjørner (TOPLEFT/TOPRIGHT osv.), ikke CENTER/LEFT/RIGHT, som kan havne på halve piksler.
+- Ank aldri layout til en FontString (høyden er ikke hele piksler). Bruk rammer med fast høyde.
+- Omberegning skjer kun på `UI_SCALE_CHANGED` / `DISPLAY_SIZE_CHANGED`, aldri per frame.
+
+## 6. Varsle før noe FPS-tungt
 - **Hvis eieren ber om noe som krever egen matte, hyppige oppdateringer, OnUpdate, mange frames eller annet som kan koste FPS: si fra FØR det bygges.** Forklar kostnaden kort, og foreslå et lettere alternativ hvis det finnes. Vent på svar før du implementerer.

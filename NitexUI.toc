@@ -2,7 +2,7 @@
 ## Title: |cff33ccffNitex|rUI
 ## Notes: A lightweight UI addon for World of Warcraft Retail.
 ## Author: Nitex
-## Version: 0.2.0
+## Version: 0.3.0
 ## IconTexture: Interface\Icons\INV_Misc_Gear_01
 ## SavedVariables: NitexUIDB
 ## SavedVariablesPerCharacter: NitexUICharDB
@@ -16,6 +16,7 @@ Locales\nbNO.lua
 # Core
 Core\Init.lua
 Core\Theme.lua
+Core\Pixel.lua
 Core\Utils.lua
 Core\Database.lua
 Core\Commands.lua

@@ -1,14 +1,16 @@
 -- NitexUI: Options window
 -- Built lazily the first time it is opened. No OnUpdate, no timers, no background events.
+-- All geometry goes through ns.PP so borders and lines stay pixel perfect at any UI scale.
 
-local addonName, ns = ...
-local T, W, L = ns.Theme, ns.Widgets, ns.L
+local _, ns = ...
+local T, W, L, PP = ns.Theme, ns.Widgets, ns.L, ns.PP
 
 local Options = {}
 ns.Options = Options
 
 local WIDTH, HEIGHT = 700, 460
 local HEADER_H, SIDEBAR_W, PAD = 46, 160, 24
+local CONTENT_W = WIDTH - SIDEBAR_W - PAD * 2
 
 local window
 local pages, tabs, tabOrder = {}, {}, {}
@@ -17,9 +19,9 @@ local pages, tabs, tabOrder = {}, {}, {}
 -- Page helper: simple top-to-bottom layout
 ---------------------------------------------------------------------------
 local function Page_Add(self, widget, gap, keepWidth)
-    widget:SetPoint("TOPLEFT", self.cursor, "BOTTOMLEFT", 0, -(gap or 10))
+    PP.Point(widget, "TOPLEFT", self.cursor, "BOTTOMLEFT", 0, -(gap or 10))
     if not keepWidth then
-        widget:SetPoint("RIGHT", self, "RIGHT", -PAD, 0)
+        PP.Width(widget, CONTENT_W)
     end
     self.cursor = widget
     if widget.Refresh then
@@ -38,12 +40,18 @@ local function NewPage(parent, title, subtitle)
     p:Hide()
     p.widgets = {}
 
-    local t = W.Text(p, W.FontTitle, title)
-    t:SetPoint("TOPLEFT", PAD, -22)
-    local s = W.Text(p, W.FontSmall, subtitle)
+    -- Fixed-height title block. Layout anchors to this frame, never to a FontString,
+    -- because text heights are not whole pixels.
+    local top = CreateFrame("Frame", nil, p)
+    PP.Point(top, "TOPLEFT", p, "TOPLEFT", PAD, -20)
+    PP.Point(top, "TOPRIGHT", p, "TOPRIGHT", -PAD, -20)
+    PP.Height(top, 38)
+    local t = W.Text(top, W.FontTitle, title)
+    t:SetPoint("TOPLEFT")
+    local s = W.Text(top, W.FontSmall, subtitle)
     s:SetPoint("TOPLEFT", t, "BOTTOMLEFT", 0, -5)
 
-    p.cursor = s
+    p.cursor = top
     p.Add = Page_Add
     p.Refresh = Page_Refresh
     return p
@@ -137,10 +145,17 @@ local function SelectPage(key)
     window.current = key
 end
 
+--- Place the window centred, snapped to whole pixels (TOPLEFT anchor, never CENTER).
+local function CenterWindow(f)
+    PP.ClearPoints(f)
+    PP.Point(f, "TOPLEFT", UIParent, "TOPLEFT",
+        (UIParent:GetWidth() - f:GetWidth()) / 2,
+        -(UIParent:GetHeight() - f:GetHeight()) / 2)
+end
+
 local function Build()
     local f = CreateFrame("Frame", "NitexUIOptionsFrame", UIParent)
-    f:SetSize(WIDTH, HEIGHT)
-    f:SetPoint("CENTER")
+    PP.Size(f, WIDTH, HEIGHT)
     f:SetFrameStrata("HIGH")
     f:SetToplevel(true)
     f:SetClampedToScreen(true)
@@ -148,35 +163,38 @@ local function Build()
     f:SetDontSavePosition(true)
     f:EnableMouse(true)
     f:Hide()
+    CenterWindow(f)
 
     W.Fill(f, "BACKGROUND", T.bg):SetAllPoints()
-    W.AddBorder(f)
+    PP.Border(f, T.border)
 
     -- Header / title bar (drag handle)
     local header = CreateFrame("Frame", nil, f)
-    header:SetPoint("TOPLEFT", 1, -1)
-    header:SetPoint("TOPRIGHT", -1, -1)
-    header:SetHeight(HEADER_H)
+    header:SetPoint("TOPLEFT")
+    header:SetPoint("TOPRIGHT")
+    PP.Height(header, HEADER_H)
     header:EnableMouse(true)
     header:RegisterForDrag("LeftButton")
     header:SetScript("OnDragStart", function() f:StartMoving() end)
-    header:SetScript("OnDragStop", function() f:StopMovingOrSizing() end)
+    header:SetScript("OnDragStop", function()
+        f:StopMovingOrSizing()
+        -- Re-anchor on whole pixels where the user dropped it.
+        local left, top = f:GetLeft(), f:GetTop()
+        PP.ClearPoints(f)
+        PP.Point(f, "TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+    end)
     W.Fill(header, "BACKGROUND", T.header):SetAllPoints()
+    W.HLine(header, T.accentDim)
 
     local title = W.Text(header, W.FontTitle, "|cff" .. T.accentHex .. "Nitex|rUI")
     title:SetPoint("LEFT", 18, 0)
     local version = W.Text(header, W.FontSmall, "v" .. ns.version)
     version:SetPoint("BOTTOMLEFT", title, "BOTTOMRIGHT", 8, 1)
 
-    local accentLine = W.Fill(header, "ARTWORK", T.accentDim)
-    accentLine:SetPoint("BOTTOMLEFT")
-    accentLine:SetPoint("BOTTOMRIGHT")
-    PixelUtil.SetHeight(accentLine, 1)
-
     -- Close button
     local close = CreateFrame("Button", nil, header)
-    close:SetSize(HEADER_H - 12, HEADER_H - 12)
-    close:SetPoint("RIGHT", -8, 0)
+    PP.Size(close, HEADER_H - 12, HEADER_H - 12)
+    PP.Point(close, "TOPRIGHT", header, "TOPRIGHT", -6, -6)
     close.text = W.Text(close, W.FontTitle, "x")
     close.text:SetPoint("CENTER", 0, 1)
     close.text:SetTextColor(unpack(T.textDim))
@@ -186,14 +204,10 @@ local function Build()
 
     -- Sidebar
     local sidebar = CreateFrame("Frame", nil, f)
-    sidebar:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -1)
-    sidebar:SetPoint("BOTTOMLEFT", 1, 1)
-    sidebar:SetWidth(SIDEBAR_W)
+    sidebar:SetPoint("TOPLEFT", header, "BOTTOMLEFT")
+    sidebar:SetPoint("BOTTOMLEFT")
+    PP.Width(sidebar, SIDEBAR_W)
     W.Fill(sidebar, "BACKGROUND", T.sidebar):SetAllPoints()
-    local divider = W.Fill(sidebar, "BORDER", T.border)
-    divider:SetPoint("TOPRIGHT")
-    divider:SetPoint("BOTTOMRIGHT")
-    PixelUtil.SetWidth(divider, 1)
 
     local prev
     for i = 1, #tabOrder do
@@ -203,11 +217,12 @@ local function Build()
             SelectPage(info.key)
         end)
         if prev then
-            tab:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -2)
+            PP.Point(tab, "TOPLEFT", prev, "BOTTOMLEFT", 0, -2)
+            PP.Point(tab, "TOPRIGHT", prev, "BOTTOMRIGHT", 0, -2)
         else
-            tab:SetPoint("TOPLEFT", 0, -12)
+            PP.Point(tab, "TOPLEFT", sidebar, "TOPLEFT", 0, -12)
+            PP.Point(tab, "TOPRIGHT", sidebar, "TOPRIGHT", 0, -12)
         end
-        tab:SetPoint("RIGHT", -1, 0)
         tabs[info.key] = tab
         prev = tab
     end
@@ -217,8 +232,9 @@ local function Build()
 
     -- Content area
     local content = CreateFrame("Frame", nil, f)
-    content:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 0, 0)
-    content:SetPoint("BOTTOMRIGHT", -1, 1)
+    content:SetPoint("TOPLEFT", sidebar, "TOPRIGHT")
+    content:SetPoint("BOTTOMRIGHT")
+    W.VLine(content, T.border, true) -- divider between sidebar and content
     f.content = content
 
     f:SetScript("OnShow", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPEN) end)
@@ -259,11 +275,16 @@ do
     title:SetPoint("TOPLEFT", 16, -16)
     local desc = W.Text(canvas, W.FontSmall, L["SETTINGS_LAUNCHER_DESC"])
     desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
-    local btn = W.Button(canvas, L["BTN_OPEN_OPTIONS"], 180, function()
+
+    -- Native Blizzard button here, since this page lives inside Blizzard's own Settings panel.
+    local btn = CreateFrame("Button", nil, canvas, "UIPanelButtonTemplate")
+    btn:SetSize(200, 26)
+    btn:SetText(L["BTN_OPEN_OPTIONS"])
+    btn:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -14)
+    btn:SetScript("OnClick", function()
         HideUIPanel(SettingsPanel)
         Options:Open()
     end)
-    btn:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -14)
 
     local category = Settings.RegisterCanvasLayoutCategory(canvas, "NitexUI")
     Settings.RegisterAddOnCategory(category)
