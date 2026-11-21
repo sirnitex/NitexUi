@@ -41,6 +41,7 @@ Core/Pixel.lua     Pixel perfect-hjelpere (borders, størrelser, ankere)
 Core/Commands.lua  /nitex og /nui
 Options/           Innstillingsvinduet (widgets + panel)
 Modules/           Én fil per funksjon – start fra _Template.lua (alle moduler er AV som standard)
+  MinimapButton.lua          Valgfri minikart-knapp (General > Minimap)
   GlobalSettings/Fonts.lua   Font og outline for hele spillet
   Interface/General.lua      Skjul bag-bar og mikro-meny
   Nameplates/Colors.lua      Helsebarfarger på Blizzards nameplates (threat, quest, type)

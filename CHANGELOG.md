@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.9.0]
+- Optional minimap button (General > Minimap), native, no LibDBIcon. Off by default. Drag to move around the minimap edge.
+
 ## [0.8.2]
 - Addon icon/logo: used in the addon list, the minimap addon compartment and the options window title bar.
 - Branding/ holds the SVG source and PNGs for CurseForge/Wago (not packaged).

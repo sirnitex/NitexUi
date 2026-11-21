@@ -264,7 +264,12 @@ StaticPopupDialogs["NITEXUI_RESET"] = {
 Options:RegisterPage{ key = "general", label = L["PAGE_GENERAL"], order = 10, build = function(parent)
     local p = NewPage(parent, L["PAGE_GENERAL"], L["PAGE_GENERAL_DESC"])
 
-    p:Add(W.Header(p, L["SECTION_DEVELOPER"]), 22)
+    p:Add(W.Header(p, L["SECTION_MINIMAP"]), 22)
+    p:Add(W.Toggle(p, L["OPT_MINIMAP"], L["OPT_MINIMAP_DESC"],
+        function() return ns:IsModuleEnabled("MinimapButton") end,
+        function(v) ns:SetModuleEnabled("MinimapButton", v) end), 10)
+
+    p:Add(W.Header(p, L["SECTION_DEVELOPER"]), 26)
     p:Add(W.Toggle(p, L["OPT_DEBUG"], L["OPT_DEBUG_DESC"],
         function() return ns.db.debug end,
         function(v) ns.db.debug = v end), 10)

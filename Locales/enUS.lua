@@ -28,6 +28,11 @@ L["PAGE_ABOUT"] = "About"
 L["PAGE_ABOUT_DESC"] = "Version and commands."
 
 -- Options: sections
+L["SECTION_MINIMAP"] = "Minimap"
+L["OPT_MINIMAP"] = "Show minimap button"
+L["OPT_MINIMAP_DESC"] = "A NitexUI button on the minimap edge. Drag it to move it. Off by default."
+L["MINIMAP_TIP_CLICK"] = "Click: open options"
+L["MINIMAP_TIP_DRAG"] = "Drag: move around the minimap"
 L["SECTION_DEVELOPER"] = "Developer"
 L["SECTION_DATA"] = "Data"
 L["SECTION_COMMANDS"] = "Slash commands"
