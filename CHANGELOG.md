@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.0]
+- Nameplates page with sub-tabs. First sub-module: Health Colors.
+- Health Colors recolours Blizzard's own enemy nameplates: threat (role-aware) > quest mob > enemy type.
+  Taint-safe: API calls in our event handler, colour cached per bar, painted from a per-bar SetStatusBarColor hook.
+- New widgets: colour row with Blizzard's colour picker; two-column page layout.
+
 ## [0.7.0]
 - Interface page with sub-tabs. First sub-module: General.
 - Interface: General can hide the bag bar and the micro menu (moved under a hidden parent; restored live when turned off, deferred until combat ends).

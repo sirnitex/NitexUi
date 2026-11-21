@@ -391,3 +391,77 @@ function W.Dropdown(parent, label, width, items, getter, setter, fontFor)
     dd:Refresh()
     return dd
 end
+
+---------------------------------------------------------------------------
+-- Colour row:  [label ...................... [swatch] (o  )]
+--   W.ColorRow(parent, label, getEnabled, setEnabled, getColor, onColorChanged)
+--   getColor() returns an {r, g, b} table that is edited in place.
+--   getEnabled may be nil: then the row only has a swatch.
+-- Uses Blizzard's native ColorPickerFrame.
+---------------------------------------------------------------------------
+local SWATCH_W, SWATCH_H = 30, 16
+
+local function ColorRow_Refresh(self)
+    local c = self.getColor()
+    self.swatch.fill:SetColorTexture(c[1], c[2], c[3], 1)
+    if self.toggle then self.toggle:Refresh() end
+end
+
+local function OpenPicker(row)
+    if not (ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow) then return end
+    local c = row.getColor()
+    local function Set(r, g, b)
+        c[1], c[2], c[3] = r, g, b
+        row:Refresh()
+        row.onColorChanged()
+    end
+    ColorPickerFrame:SetupColorPickerAndShow({
+        r = c[1], g = c[2], b = c[3],
+        hasOpacity = false,
+        swatchFunc = function() Set(ColorPickerFrame:GetColorRGB()) end,
+        cancelFunc = function(prev) Set(prev.r, prev.g, prev.b) end,
+    })
+end
+
+local function Swatch_OnEnter(self) PP.SetBorderColor(self, T.accent) end
+local function Swatch_OnLeave(self) PP.SetBorderColor(self, T.border) end
+
+function W.ColorRow(parent, label, getEnabled, setEnabled, getColor, onColorChanged)
+    local row = CreateFrame("Frame", nil, parent)
+    PP.Height(row, 26)
+    row.getColor, row.onColorChanged = getColor, onColorChanged
+
+    local rightEdge = row
+    local rightPoint = "TOPRIGHT"
+    if getEnabled then
+        -- Reuse the toggle switch, without its own label.
+        local toggle = W.Toggle(row, "", nil, getEnabled, function(v)
+            setEnabled(v)
+            onColorChanged()
+        end)
+        PP.Point(toggle, "TOPRIGHT", row, "TOPRIGHT", 0, 0)
+        PP.Width(toggle, 34)
+        row.toggle = toggle
+        rightEdge, rightPoint = toggle, "TOPLEFT"
+    end
+
+    local swatch = CreateFrame("Button", nil, row)
+    PP.Size(swatch, SWATCH_W, SWATCH_H)
+    PP.Point(swatch, "TOPRIGHT", rightEdge, rightPoint, getEnabled and -12 or 0, -(26 - SWATCH_H) / 2)
+    swatch.fill = W.Fill(swatch, "ARTWORK", T.text)
+    swatch.fill:SetAllPoints()
+    PP.Border(swatch, T.border)
+    swatch:SetScript("OnClick", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPTION); OpenPicker(row) end)
+    swatch:SetScript("OnEnter", Swatch_OnEnter)
+    swatch:SetScript("OnLeave", Swatch_OnLeave)
+    row.swatch = swatch
+
+    local text = W.Text(row, W.FontNormal, label)
+    text:SetPoint("LEFT", 0, 0)
+    text:SetPoint("RIGHT", swatch, "LEFT", -10, 0)
+    text:SetWordWrap(false)
+
+    row.Refresh = ColorRow_Refresh
+    row:Refresh()
+    return row
+end

@@ -81,6 +81,47 @@ end
 Options.NewPage = NewPage
 
 ---------------------------------------------------------------------------
+-- Two columns below the page's current position.
+--   local left, right = Options.Columns(page)
+--   left:Add(widget, gap)   -- same rules as page:Add, at half width
+-- Widgets added to a column are refreshed and dimmed together with the page.
+---------------------------------------------------------------------------
+local COLUMN_GAP = 24
+
+local function Column_Add(self, widget, gap)
+    if self.first then
+        PP.Point(widget, "TOPLEFT", self.holder, "TOPLEFT", self.x, 0)
+        self.first = false
+    else
+        PP.Point(widget, "TOPLEFT", self.cursor, "BOTTOMLEFT", 0, -(gap or 10))
+        self.height = self.height + (gap or 10)
+    end
+    self.height = self.height + widget:GetHeight()
+    PP.Width(widget, self.w)
+    self.cursor = widget
+    self.page:Track(widget)
+    if self.page.blocker then self.page:Depend(widget) end
+    return widget
+end
+
+function Options.Columns(page, gap)
+    local holder = CreateFrame("Frame", nil, page)
+    PP.Height(holder, 1)
+    page:Add(holder, gap or 14)
+    local w = math.floor((CONTENT_W - COLUMN_GAP) / 2)
+    local function New(x)
+        return { page = page, holder = holder, x = x, w = w, first = true, height = 0, Add = Column_Add }
+    end
+    return New(0), New(w + COLUMN_GAP)
+end
+
+--- Continue full-width page layout below the taller of two columns.
+function Options.EndColumns(page, left, right)
+    -- Heights are tracked while adding (all widgets have fixed heights), so no layout query is needed.
+    page.cursor = (left.height >= right.height) and left.cursor or right.cursor
+end
+
+---------------------------------------------------------------------------
 -- Module on/off switch for a page.
 -- Everything added to the page after this switch belongs to the module: while the
 -- module is off it is dimmed and an invisible blocker swallows clicks on it.
