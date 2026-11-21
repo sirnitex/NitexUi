@@ -41,6 +41,9 @@ Core/Pixel.lua     Pixel perfect-hjelpere (borders, størrelser, ankere)
 Core/Commands.lua  /nitex og /nui
 Options/           Innstillingsvinduet (widgets + panel)
 Modules/           Én fil per funksjon – start fra Example.lua
+  GlobalSettings/Fonts.lua   Font og outline for hele spillet
+Options/Pages/     Innstillingssider som moduler registrerer
+Media/Fonts/       Egne fonter (.ttf/.otf) – se Modules/GlobalSettings/Fonts.lua
 Media/             Teksturer, fonter, lyder
 ```
 

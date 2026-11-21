@@ -8,12 +8,15 @@ local T, W, L, PP = ns.Theme, ns.Widgets, ns.L, ns.PP
 local Options = {}
 ns.Options = Options
 
-local WIDTH, HEIGHT = 700, 460
-local HEADER_H, SIDEBAR_W, PAD = 46, 160, 24
+local WIDTH, HEIGHT = 760, 560
+local HEADER_H, SIDEBAR_W, PAD = 46, 170, 24
+local SUBTAB_H = 32
 local CONTENT_W = WIDTH - SIDEBAR_W - PAD * 2
+Options.CONTENT_W = CONTENT_W
 
 local window
-local pages, tabs, tabOrder = {}, {}, {}
+local pages, tabs = {}, {}
+local registry = {} -- registered pages, sorted by order
 
 ---------------------------------------------------------------------------
 -- Page helper: simple top-to-bottom layout
@@ -24,6 +27,12 @@ local function Page_Add(self, widget, gap, keepWidth)
         PP.Width(widget, CONTENT_W)
     end
     self.cursor = widget
+    self:Track(widget)
+    return widget
+end
+
+--- Remember a widget so the page refreshes it every time it is shown.
+local function Page_Track(self, widget)
     if widget.Refresh then
         self.widgets[#self.widgets + 1] = widget
     end
@@ -34,6 +43,7 @@ local function Page_Refresh(self)
     for i = 1, #self.widgets do self.widgets[i]:Refresh() end
 end
 
+--- New page. With no title, layout starts at the top edge (used for sub-pages).
 local function NewPage(parent, title, subtitle)
     local p = CreateFrame("Frame", nil, parent)
     p:SetAllPoints()
@@ -43,22 +53,99 @@ local function NewPage(parent, title, subtitle)
     -- Fixed-height title block. Layout anchors to this frame, never to a FontString,
     -- because text heights are not whole pixels.
     local top = CreateFrame("Frame", nil, p)
-    PP.Point(top, "TOPLEFT", p, "TOPLEFT", PAD, -20)
-    PP.Point(top, "TOPRIGHT", p, "TOPRIGHT", -PAD, -20)
-    PP.Height(top, 38)
-    local t = W.Text(top, W.FontTitle, title)
-    t:SetPoint("TOPLEFT")
-    local s = W.Text(top, W.FontSmall, subtitle)
-    s:SetPoint("TOPLEFT", t, "BOTTOMLEFT", 0, -5)
+    PP.Point(top, "TOPLEFT", p, "TOPLEFT", PAD, title and -20 or 0)
+    PP.Point(top, "TOPRIGHT", p, "TOPRIGHT", -PAD, title and -20 or 0)
+    PP.Height(top, title and 38 or 1)
+    if title then
+        local t = W.Text(top, W.FontTitle, title)
+        t:SetPoint("TOPLEFT")
+        local s = W.Text(top, W.FontSmall, subtitle)
+        s:SetPoint("TOPLEFT", t, "BOTTOMLEFT", 0, -5)
+    end
 
     p.cursor = top
     p.Add = Page_Add
+    p.Track = Page_Track
     p.Refresh = Page_Refresh
+    return p
+end
+Options.NewPage = NewPage
+
+---------------------------------------------------------------------------
+-- Page with sub-tabs: title, a sub-tab bar, and lazily built sub-pages below it.
+---------------------------------------------------------------------------
+local function SubPages_Select(self, key)
+    local info = self.subs[key]
+    if not info.page then
+        info.page = info.build(self.area)
+    end
+    for k, sub in next, self.subs do
+        if sub.page then sub.page:SetShown(k == key) end
+        sub.tab:SetSelected(k == key)
+    end
+    info.page:Refresh()
+    self.current = key
+end
+
+local function SubPages_Refresh(self)
+    self:Select(self.current)
+end
+
+local function NewSubTabPage(parent, info)
+    local p = NewPage(parent, info.label, info.desc)
+
+    local bar = CreateFrame("Frame", nil, p)
+    PP.Point(bar, "TOPLEFT", p.cursor, "BOTTOMLEFT", 0, -12)
+    PP.Size(bar, CONTENT_W, SUBTAB_H)
+    W.HLine(bar, T.border)
+
+    local area = CreateFrame("Frame", nil, p)
+    PP.Point(area, "TOPLEFT", bar, "BOTTOMLEFT", -PAD, 0)
+    area:SetPoint("BOTTOMRIGHT")
+    p.area = area
+
+    p.subs = {}
+    local prev
+    for i = 1, #info.subtabs do
+        local sub = info.subtabs[i]
+        p.subs[sub.key] = sub
+        sub.tab = W.SubTab(bar, sub.label, function()
+            PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
+            p:Select(sub.key)
+        end)
+        if prev then
+            PP.Point(sub.tab, "TOPLEFT", prev, "TOPRIGHT", 4, 0)
+        else
+            PP.Point(sub.tab, "TOPLEFT", bar, "TOPLEFT", 0, 0)
+        end
+        prev = sub.tab
+    end
+
+    p.Select = SubPages_Select
+    p.Refresh = SubPages_Refresh
+    p.current = info.subtabs[1].key
     return p
 end
 
 ---------------------------------------------------------------------------
--- Pages
+-- Page registry
+--   Options:RegisterPage{ key, label, order, desc, build = function(parent) return page end }
+--   Options:RegisterPage{ key, label, order, desc, subtabs = { { key, label, build }, ... } }
+---------------------------------------------------------------------------
+function Options:RegisterPage(info)
+    registry[#registry + 1] = info
+    table.sort(registry, function(a, b) return a.order < b.order end)
+end
+
+local function BuildPage(info, parent)
+    if info.subtabs then
+        return NewSubTabPage(parent, info)
+    end
+    return info.build(parent)
+end
+
+---------------------------------------------------------------------------
+-- Built-in pages
 ---------------------------------------------------------------------------
 StaticPopupDialogs["NITEXUI_RESET"] = {
     text = L["RESET_CONFIRM"],
@@ -74,9 +161,7 @@ StaticPopupDialogs["NITEXUI_RESET"] = {
     preferredIndex = 3,
 }
 
-local builders = {}
-
-builders.general = function(parent)
+Options:RegisterPage{ key = "general", label = L["PAGE_GENERAL"], order = 10, build = function(parent)
     local p = NewPage(parent, L["PAGE_GENERAL"], L["PAGE_GENERAL_DESC"])
 
     p:Add(W.Header(p, L["SECTION_DEVELOPER"]), 22)
@@ -87,11 +172,10 @@ builders.general = function(parent)
     p:Add(W.Header(p, L["SECTION_DATA"]), 26)
     p:Add(W.Paragraph(p, L["RESET_DESC"]), 10)
     p:Add(W.Button(p, L["BTN_RESET"], 160, function() StaticPopup_Show("NITEXUI_RESET") end), 12, true)
-
     return p
-end
+end }
 
-builders.modules = function(parent)
+Options:RegisterPage{ key = "modules", label = L["PAGE_MODULES"], order = 80, build = function(parent)
     local p = NewPage(parent, L["PAGE_MODULES"], L["PAGE_MODULES_DESC"])
     p:Add(W.Header(p, L["SECTION_MODULES"]), 22)
 
@@ -109,9 +193,9 @@ builders.modules = function(parent)
     p:Add(W.Paragraph(p, L["RELOAD_NOTE"]), 18)
     p:Add(W.Button(p, L["BTN_RELOAD"], 140, function() ReloadUI() end), 10, true)
     return p
-end
+end }
 
-builders.about = function(parent)
+Options:RegisterPage{ key = "about", label = L["PAGE_ABOUT"], order = 90, build = function(parent)
     local p = NewPage(parent, L["PAGE_ABOUT"], L["PAGE_ABOUT_DESC"])
 
     p:Add(W.Header(p, "|cff" .. T.accentHex .. "Nitex|rUI"), 22)
@@ -124,20 +208,19 @@ builders.about = function(parent)
         "|cff" .. T.accentHex .. "/nitex debug|r  " .. L["HELP_DEBUG"] .. "\n" ..
         "|cff" .. T.accentHex .. "/nitex reset|r  " .. L["HELP_RESET"], W.FontNormal), 10)
     return p
-end
-
-tabOrder = {
-    { key = "general", label = L["PAGE_GENERAL"] },
-    { key = "modules", label = L["PAGE_MODULES"] },
-    { key = "about",   label = L["PAGE_ABOUT"] },
-}
+end }
 
 ---------------------------------------------------------------------------
 -- Window
 ---------------------------------------------------------------------------
 local function SelectPage(key)
     if not pages[key] then
-        pages[key] = builders[key](window.content)
+        for i = 1, #registry do
+            if registry[i].key == key then
+                pages[key] = BuildPage(registry[i], window.content)
+                break
+            end
+        end
     end
     for k, page in next, pages do page:SetShown(k == key) end
     for k, tab in next, tabs do tab:SetSelected(k == key) end
@@ -210,8 +293,8 @@ local function Build()
     W.Fill(sidebar, "BACKGROUND", T.sidebar):SetAllPoints()
 
     local prev
-    for i = 1, #tabOrder do
-        local info = tabOrder[i]
+    for i = 1, #registry do
+        local info = registry[i]
         local tab = W.Tab(sidebar, info.label, function()
             PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
             SelectPage(info.key)
@@ -254,7 +337,7 @@ function Options:Open(key)
     if not window then Build() end
     window:Show()
     window:Raise()
-    if key and builders[key] then SelectPage(key) end
+    if key and tabs[key] then SelectPage(key) end
 end
 
 function Options:Toggle()

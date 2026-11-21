@@ -2,7 +2,7 @@
 ## Title: |cff33ccffNitex|rUI
 ## Notes: A lightweight UI addon for World of Warcraft Retail and Forever.
 ## Author: Nitex
-## Version: 0.4.0
+## Version: 0.5.0
 ## IconTexture: Interface\Icons\INV_Misc_Gear_01
 ## SavedVariables: NitexUIDB
 ## SavedVariablesPerCharacter: NitexUICharDB
@@ -23,7 +23,9 @@ Core\Commands.lua
 
 # Modules
 Modules\Example.lua
+Modules\GlobalSettings\Fonts.lua
 
 # Options
 Options\Widgets.lua
 Options\Panel.lua
+Options\Pages\GlobalSettings.lua

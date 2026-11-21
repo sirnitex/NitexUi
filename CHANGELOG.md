@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0]
+- Global Settings page with sub-tabs. First sub-tab: Fonts.
+- Fonts module: replace the font of all default game text via Blizzard's font objects (GetFonts), with Slug outline as default. Restores originals when turned off.
+- Options window now uses a page registry so modules can add their own pages and sub-tabs.
+- New widgets: dropdown (with font preview) and sub-tabs.
+
 ## [0.4.0]
 - WoW Forever support (Interface 16001) in the same .toc as Retail.
 - Client flavour flags ns.isRetail / ns.isForever; guards for Settings API and metadata.

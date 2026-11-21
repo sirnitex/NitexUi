@@ -41,6 +41,18 @@ L["BTN_RELOAD"] = "Reload UI"
 L["RELOAD_NOTE"] = "Module changes take effect after a UI reload."
 L["ABOUT_TEXT"] = "Version %s\nA lightweight interface addon built only on Blizzard's native API."
 
+-- Global Settings
+L["PAGE_GLOBAL"] = "Global Settings"
+L["PAGE_GLOBAL_DESC"] = "Settings that apply to the whole game."
+L["SUB_FONTS"] = "Fonts"
+L["SECTION_FONT"] = "Game font"
+L["SECTION_PREVIEW"] = "Preview"
+L["OPT_FONTS_ENABLE"] = "Replace game fonts"
+L["OPT_FONTS_ENABLE_DESC"] = "Use the font and outline below for all default Blizzard text."
+L["OPT_FONT"] = "Font"
+L["OPT_OUTLINE"] = "Outline"
+L["FONTS_NOTE"] = "Most text updates instantly. Unit names and floating combat text update after a reload. Slug renders text on the GPU for very crisp outlines, so text shadows are turned off while it is active."
+
 -- Blizzard settings launcher
 L["SETTINGS_LAUNCHER_DESC"] = "NitexUI has its own options window."
 L["BTN_OPEN_OPTIONS"] = "Open NitexUI options"

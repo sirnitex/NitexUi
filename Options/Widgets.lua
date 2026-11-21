@@ -239,3 +239,155 @@ function W.Tab(parent, label, onClick)
     b:SetScript("OnClick", onClick)
     return b
 end
+
+---------------------------------------------------------------------------
+-- Sub-tab (horizontal, inside a page):  Label
+--                                        ‾‾‾‾‾ (2px accent when selected)
+---------------------------------------------------------------------------
+local function SubTab_SetSelected(self, selected)
+    self.selected = selected
+    self.bar:SetShown(selected)
+    self.text:SetTextColor(unpack(selected and T.accent or T.textDim))
+end
+
+local function SubTab_OnEnter(self) if not self.selected then self.text:SetTextColor(unpack(T.text)) end end
+local function SubTab_OnLeave(self) if not self.selected then self.text:SetTextColor(unpack(T.textDim)) end end
+
+function W.SubTab(parent, label, onClick)
+    local b = CreateFrame("Button", nil, parent)
+    b.text = W.Text(b, W.FontNormal, label)
+    b.text:SetPoint("CENTER", 0, 1)
+    PP.Size(b, math.ceil(b.text:GetStringWidth()) + 28, parent:GetHeight())
+
+    b.bar = W.HLine(b, T.accent)
+    PP.PixelHeight(b.bar, 2)
+    b.bar:Hide()
+
+    b.SetSelected = SubTab_SetSelected
+    b:SetScript("OnEnter", SubTab_OnEnter)
+    b:SetScript("OnLeave", SubTab_OnLeave)
+    b:SetScript("OnClick", onClick)
+    b:SetSelected(false)
+    return b
+end
+
+---------------------------------------------------------------------------
+-- Dropdown
+--   W.Dropdown(parent, label, width, items, getter, setter, fontFor)
+--   items  = array of { value = ..., text = ... }
+--   fontFor(value) -> font file, optional: each row (and the button) previews that font.
+-- The list is a plain child frame of the button, built once. No menus, no OnUpdate.
+---------------------------------------------------------------------------
+local DD_BTN_H, DD_ROW_H = 26, 24
+local openList -- only one list open at a time
+
+local function Dropdown_Refresh(self)
+    local value = self.getter()
+    local text = value
+    for i = 1, #self.items do
+        local item = self.items[i]
+        if item.value == value then text = item.text end
+        local row = self.rows[i]
+        row.check:SetShown(item.value == value)
+    end
+    self.button.text:SetText(text)
+    if self.fontFor then
+        self.button.text:SetFont(self.fontFor(value), 12, "")
+    end
+end
+
+local function Dropdown_Close(self)
+    self.list:Hide()
+    if openList == self.list then openList = nil end
+end
+
+local function DDButton_OnClick(button)
+    local dd = button.owner
+    if dd.list:IsShown() then
+        dd:Close()
+    else
+        if openList then openList:Hide() end
+        dd.list:Show()
+        openList = dd.list
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION)
+    end
+end
+
+local function DDRow_OnClick(row)
+    local dd = row.owner
+    dd.setter(row.value)
+    PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+    dd:Close()
+    dd:Refresh()
+end
+
+local function DDRow_OnEnter(row) row.hl:Show() end
+local function DDRow_OnLeave(row) row.hl:Hide() end
+
+function W.Dropdown(parent, label, width, items, getter, setter, fontFor)
+    local dd = CreateFrame("Frame", nil, parent)
+    PP.Size(dd, width, 18 + DD_BTN_H)
+    dd.items, dd.getter, dd.setter, dd.fontFor = items, getter, setter, fontFor
+
+    local title = W.Text(dd, W.FontSmall, label)
+    title:SetPoint("TOPLEFT")
+
+    -- Button
+    local button = CreateFrame("Button", nil, dd)
+    PP.Size(button, width, DD_BTN_H)
+    PP.Point(button, "TOPLEFT", dd, "TOPLEFT", 0, -18)
+    button.bg = W.Fill(button, "BACKGROUND", T.element)
+    button.bg:SetAllPoints()
+    PP.Border(button, T.border)
+    button.text = W.Text(button, W.FontNormal, "")
+    button.text:SetPoint("LEFT", 10, 0)
+    button.text:SetPoint("RIGHT", -24, 0)
+    button.text:SetWordWrap(false)
+    local arrow = W.Text(button, W.FontSmall, "v")
+    arrow:SetPoint("RIGHT", -10, 0)
+    button.owner = dd
+    button:SetScript("OnClick", DDButton_OnClick)
+    button:SetScript("OnEnter", Button_OnEnter)
+    button:SetScript("OnLeave", Button_OnLeave)
+    dd.button = button
+
+    -- List (child of the button, drawn above everything in the window)
+    local list = CreateFrame("Frame", nil, button)
+    list:SetFrameStrata("DIALOG")
+    PP.Size(list, width, #items * DD_ROW_H + 2)
+    PP.Point(list, "TOPLEFT", button, "BOTTOMLEFT", 0, -2)
+    list:EnableMouse(true)
+    W.Fill(list, "BACKGROUND", T.header):SetAllPoints()
+    PP.Border(list, T.accentDim)
+    list:Hide()
+    dd.list = list
+
+    dd.rows = {}
+    for i = 1, #items do
+        local item = items[i]
+        local row = CreateFrame("Button", nil, list)
+        PP.Size(row, width, DD_ROW_H)
+        PP.Point(row, "TOPLEFT", list, "TOPLEFT", 0, -1 - (i - 1) * DD_ROW_H)
+        row.hl = W.Fill(row, "BACKGROUND", T.elementHover)
+        row.hl:SetAllPoints()
+        row.hl:Hide()
+        row.check = W.Fill(row, "ARTWORK", T.accent)
+        PP.Point(row.check, "TOPLEFT", row, "TOPLEFT", 0, 0)
+        PP.Point(row.check, "BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0)
+        PP.PixelWidth(row.check, 2)
+        local text = W.Text(row, W.FontNormal, item.text)
+        text:SetPoint("LEFT", 10, 0)
+        if fontFor then text:SetFont(fontFor(item.value), 12, "") end
+        row.owner, row.value = dd, item.value
+        row:SetScript("OnClick", DDRow_OnClick)
+        row:SetScript("OnEnter", DDRow_OnEnter)
+        row:SetScript("OnLeave", DDRow_OnLeave)
+        dd.rows[i] = row
+    end
+
+    dd.Refresh = Dropdown_Refresh
+    dd.Close = Dropdown_Close
+    dd:SetScript("OnHide", Dropdown_Close)
+    dd:Refresh()
+    return dd
+end
