@@ -89,8 +89,16 @@ function ns:FollowsDefaultProfile()
     return self.charDB.profile == nil
 end
 
+--- "Name - Realm", or just "Name" if the realm is empty or kept secret by the client.
 function ns:GetCharacterName()
-    return (UnitName("player") or "?") .. " - " .. (GetRealmName() or "?")
+    local secret = issecretvalue or function() return false end
+    local name = UnitName("player")
+    if not name or secret(name) then name = "?" end
+    local realm = GetRealmName and GetRealmName()
+    if realm and not secret(realm) and realm ~= "" then
+        return name .. " - " .. realm
+    end
+    return name
 end
 
 ---------------------------------------------------------------------------

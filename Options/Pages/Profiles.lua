@@ -105,12 +105,17 @@ function Options.BuildProfiles(parent)
 
     -- This character
     p:Add(W.Header(p, L["SECTION_THIS_CHAR"]), 18)
-    local info = p:Add(W.Paragraph(p, "", W.FontNormal), 10)
+    -- Single line with a fixed height (no text measuring).
+    local info = CreateFrame("Frame", nil, p)
+    ns.PP.Height(info, 18)
+    info.text = W.Text(info, W.FontNormal, "")
+    info.text:SetPoint("TOPLEFT")
+    info.text:SetPoint("TOPRIGHT")
+    info.text:SetWordWrap(false)
     info.Refresh = function(self)
         self.text:SetText(L["PROFILE_INFO"]:format(ns:GetCharacterName(), ns.profileName))
-        ns.PP.Height(self, self.text:GetStringHeight() + 2)
     end
-    p:Track(info)
+    p:Add(info, 10)
 
     p:Add(W.Dropdown(p, L["OPT_CHAR_PROFILE"], DD_W, ActiveItems,
         function() return ns:FollowsDefaultProfile() and FOLLOW or ns.profileName end,

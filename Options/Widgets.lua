@@ -82,8 +82,13 @@ end
 ---------------------------------------------------------------------------
 -- Paragraph of text. Height follows the wrapped text, rounded to whole pixels.
 ---------------------------------------------------------------------------
+local issecretvalue = issecretvalue or function() return false end
+
 local function Paragraph_OnSizeChanged(self)
-    PP.Height(self, self.text:GetStringHeight() + 2)
+    local h = self.text:GetStringHeight()
+    if h and not issecretvalue(h) then
+        PP.Height(self, h + 2)
+    end
 end
 
 function W.Paragraph(parent, text, font)

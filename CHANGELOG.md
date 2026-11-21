@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.10.1]
+- Fix: Profiles page stopped building after the character line (realm name / text height could be secret).
+
 ## [0.10.0]
 - Profiles (General > Profiles): create, duplicate, copy from, delete, reset.
 - Per-character profile or "Account default"; a default profile for all characters (also new ones).
