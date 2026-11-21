@@ -1,0 +1,22 @@
+## Interface: 120105
+## Title: |cff33ccffNitex|rUI
+## Notes: A custom UI addon for World of Warcraft Retail.
+## Author: Nitex
+## Version: @project-version@
+## IconTexture: Interface\Icons\INV_Misc_Gear_01
+## SavedVariables: NitexUIDB
+## SavedVariablesPerCharacter: NitexUICharDB
+## Category: User Interface
+
+# Locales
+Locales\enUS.lua
+Locales\nbNO.lua
+
+# Core
+Core\Init.lua
+Core\Utils.lua
+Core\Database.lua
+Core\Commands.lua
+
+# Modules
+Modules\Example.lua

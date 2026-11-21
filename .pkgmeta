@@ -1,0 +1,14 @@
+# Config for the BigWigs packager (CurseForge / Wago / WoWInterface releases)
+# https://github.com/BigWigsMods/packager
+package-as: NitexUI
+
+ignore:
+  - README.md
+  - CHANGELOG.md
+  - .editorconfig
+  - .luarc.json
+  - .vscode
+  - .github
+
+# externals:
+#   Libs/LibStub: https://repos.wowace.com/wow/libstub/trunk
