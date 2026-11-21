@@ -510,3 +510,51 @@ function W.ColorRow(parent, label, getEnabled, setEnabled, getColor, onColorChan
     row:Refresh()
     return row
 end
+
+---------------------------------------------------------------------------
+-- Text box (single line, native EditBox)
+--   W.EditBox(parent, label, width) -> frame with .box (the EditBox)
+-- Clicking selects all text so long strings are easy to copy (Ctrl+C) or replace (Ctrl+V).
+---------------------------------------------------------------------------
+local EB_H = 26
+
+local function EB_OnFocus(self)
+    self:HighlightText()
+    PP.SetBorderColor(self.holder, T.accent)
+end
+
+local function EB_OnFocusLost(self)
+    self:HighlightText(0, 0)
+    PP.SetBorderColor(self.holder, T.border)
+end
+
+local function EB_OnEscape(self) self:ClearFocus() end
+
+function W.EditBox(parent, label, width)
+    local f = CreateFrame("Frame", nil, parent)
+    PP.Size(f, width, 18 + EB_H)
+
+    local title = W.Text(f, W.FontSmall, label)
+    title:SetPoint("TOPLEFT")
+
+    local holder = CreateFrame("Frame", nil, f)
+    PP.Size(holder, width, EB_H)
+    PP.Point(holder, "TOPLEFT", f, "TOPLEFT", 0, -18)
+    W.Fill(holder, "BACKGROUND", T.header):SetAllPoints()
+    PP.Border(holder, T.border)
+
+    local box = CreateFrame("EditBox", nil, holder)
+    box:SetPoint("TOPLEFT", 8, 0)
+    box:SetPoint("BOTTOMRIGHT", -8, 0)
+    box:SetFontObject(W.FontNormal)
+    box:SetAutoFocus(false)
+    box:SetMaxLetters(0)
+    box.holder = holder
+    box:SetScript("OnEditFocusGained", EB_OnFocus)
+    box:SetScript("OnEditFocusLost", EB_OnFocusLost)
+    box:SetScript("OnEscapePressed", EB_OnEscape)
+    box:SetScript("OnEnterPressed", EB_OnEscape)
+
+    f.box = box
+    return f
+end

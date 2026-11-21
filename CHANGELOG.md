@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0]
+- Profile system rebuilt in ElvUI/AceDB style, native (no libraries):
+  per-character profile keys, default profile for all other characters, new/duplicate/reset/copy/delete.
+- Import/export of shareable profile strings ("!NUI1!...") using Blizzard's C_EncodingUtil (CBOR + Deflate + Base64).
+- Existing profiles and character choices are migrated automatically.
+- New text box widget.
+
 ## [0.10.4]
 - Fix (root cause): text paragraphs measured their height before they had a width and reported a huge height, pushing every widget below them off the screen. The text now gets an explicit width before it is measured.
 
