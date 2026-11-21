@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.10.3]
+- Fix: widgets placed below a wrapping text paragraph were not shown (Profiles > Manage).
+  Pixel helpers no longer clear and re-set anchors when only a size changes.
+
 ## [0.10.2]
 - If an options page fails to build, the error is now printed in chat instead of leaving an empty page.
 

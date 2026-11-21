@@ -66,7 +66,8 @@ local function Data(region)
     return d
 end
 
-local function Apply(region, d)
+-- Size and position are applied separately: changing a size never touches anchors.
+local function ApplySize(region, d)
     local es = region:GetEffectiveScale()
     if d.w then region:SetWidth(GetNearestPixelSize(d.w, es)) end
     if d.h then region:SetHeight(GetNearestPixelSize(d.h, es)) end
@@ -75,52 +76,61 @@ local function Apply(region, d)
         if d.pxW then region:SetWidth(d.pxW * px) end
         if d.pxH then region:SetHeight(d.pxH * px) end
     end
-    if next(d.points) then
-        region:ClearAllPoints()
-        local px = PixelUtil.GetPixelToUIUnitFactor() / es
-        for point, p in next, d.points do
-            local x, y
-            if p.pixels then
-                x, y = p.x * px, p.y * px
-            else
-                x, y = GetNearestPixelSize(p.x, es), GetNearestPixelSize(p.y, es)
-            end
-            region:SetPoint(point, p.rel, p.relPoint, x, y)
+end
+
+-- Re-sets only the anchors PP knows about. SetPoint with the same point name replaces
+-- that anchor, so anchors set elsewhere with plain SetPoint are left alone.
+local function ApplyPoints(region, d)
+    local es = region:GetEffectiveScale()
+    local px = PixelUtil.GetPixelToUIUnitFactor() / es
+    for point, p in next, d.points do
+        local x, y
+        if p.pixels then
+            x, y = p.x * px, p.y * px
+        else
+            x, y = GetNearestPixelSize(p.x, es), GetNearestPixelSize(p.y, es)
         end
+        region:SetPoint(point, p.rel, p.relPoint, x, y)
     end
+end
+
+local function Apply(region, d)
+    ApplySize(region, d)
+    ApplyPoints(region, d)
 end
 
 --- Width/height in UI units, rounded to whole physical pixels.
 function PP.Size(region, w, h)
     local d = Data(region)
     d.w, d.h = w, h or w
-    Apply(region, d)
+    ApplySize(region, d)
 end
 
 function PP.Width(region, w)
     local d = Data(region)
+    if d.w == w then return end
     d.w = w
-    Apply(region, d)
+    ApplySize(region, d)
 end
 
 function PP.Height(region, h)
     local d = Data(region)
     if d.h == h then return end
     d.h = h
-    Apply(region, d)
+    ApplySize(region, d)
 end
 
 --- Width/height as an exact number of physical pixels (for lines and borders).
 function PP.PixelWidth(region, px)
     local d = Data(region)
     d.pxW = px
-    Apply(region, d)
+    ApplySize(region, d)
 end
 
 function PP.PixelHeight(region, px)
     local d = Data(region)
     d.pxH = px
-    Apply(region, d)
+    ApplySize(region, d)
 end
 
 local function SetPointData(region, point, rel, relPoint, x, y, pixels)
@@ -133,7 +143,13 @@ local function SetPointData(region, point, rel, relPoint, x, y, pixels)
     p.rel = rel or region:GetParent()
     p.relPoint = relPoint or point
     p.x, p.y, p.pixels = x or 0, y or 0, pixels
-    Apply(region, d)
+    local es = region:GetEffectiveScale()
+    if pixels then
+        local px = PixelUtil.GetPixelToUIUnitFactor() / es
+        region:SetPoint(point, p.rel, p.relPoint, p.x * px, p.y * px)
+    else
+        region:SetPoint(point, p.rel, p.relPoint, GetNearestPixelSize(p.x, es), GetNearestPixelSize(p.y, es))
+    end
 end
 
 --- Anchor with offsets in UI units, rounded to whole pixels.
