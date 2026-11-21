@@ -2,7 +2,7 @@
 ## Title: |cff33ccffNitex|rUI
 ## Notes: A custom UI addon for World of Warcraft Retail.
 ## Author: Nitex
-## Version: @project-version@
+## Version: 0.1.0
 ## IconTexture: Interface\Icons\INV_Misc_Gear_01
 ## SavedVariables: NitexUIDB
 ## SavedVariablesPerCharacter: NitexUICharDB
