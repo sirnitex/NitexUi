@@ -244,6 +244,7 @@ Options:RegisterPage{ key = "about", label = L["PAGE_ABOUT"], order = 90, build 
     p:Add(W.Paragraph(p,
         "|cff" .. T.accentHex .. "/nitex|r  " .. L["CMD_OPEN"] .. "\n" ..
         "|cff" .. T.accentHex .. "/nitex help|r  " .. L["CMD_HELP"] .. "\n" ..
+        "|cff" .. T.accentHex .. "/nitex status|r  " .. L["HELP_STATUS"] .. "\n" ..
         "|cff" .. T.accentHex .. "/nitex debug|r  " .. L["HELP_DEBUG"] .. "\n" ..
         "|cff" .. T.accentHex .. "/nitex reset|r  " .. L["HELP_RESET"], W.FontNormal), 10)
     return p

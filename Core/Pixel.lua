@@ -22,7 +22,7 @@ local PixelUtil = PixelUtil
 local GetNearestPixelSize = PixelUtil.GetNearestPixelSize
 local next, unpack = next, unpack
 
-local PP = {}
+local PP = { name = "PixelPerfect" }
 ns.PP = PP
 
 -- Weak tables: if a region is ever garbage collected, it drops out by itself.
@@ -46,9 +46,20 @@ end
 ---------------------------------------------------------------------------
 -- Tracked geometry (re-applied when the scale changes)
 ---------------------------------------------------------------------------
+-- The scale events are only registered once something actually uses PP
+-- (i.e. the options window has been opened). Until then this file costs nothing.
+local listening = false
+local function Listen()
+    if listening then return end
+    listening = true
+    ns:RegisterEvent("UI_SCALE_CHANGED", PP, PP.Resnap)
+    ns:RegisterEvent("DISPLAY_SIZE_CHANGED", PP, PP.Resnap)
+end
+
 local function Data(region)
     local d = tracked[region]
     if not d then
+        Listen()
         d = { points = {} }
         tracked[region] = d
     end
@@ -176,6 +187,7 @@ function PP.Border(frame, color, size)
     b.edges = e
 
     borders[b] = true
+    Listen()
     SnapBorder(b)
     frame.ppBorder = b
     return b
@@ -195,5 +207,3 @@ function PP.Resnap()
     for b in next, borders do SnapBorder(b) end
 end
 
-ns:RegisterEvent("UI_SCALE_CHANGED", PP, PP.Resnap)
-ns:RegisterEvent("DISPLAY_SIZE_CHANGED", PP, PP.Resnap)

@@ -20,7 +20,11 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 ## 1c. Moduler
 - Alle funksjoner er egne moduler (`ns:NewModule`). **Alle moduler er AV som standard** – brukeren skrur på bare det de trenger.
 - Ingen samlet "Modules"-tab. Hver modul har sin egen av/på-bryter øverst på sin side (`Options.ModuleToggle`).
-- En modul gjør ingenting (ingen events, ingen hooks, ingen frames) før den er slått på.
+- En modul som er AV skal ikke bruke systemressurser: ingen events, ingen hooks, ingen timere, ingen frames, ingen innsamlet data. Bare statiske definisjoner (lister/standardverdier) og funksjoner kan finnes i minnet.
+- All oppstart skjer i `OnEnable`, aldri i filens toppnivå eller `OnInitialize` (unntak: globale verdier som må settes før verden laster, og bare hvis modulen er på).
+- `OnDisable` skal avregistrere alt og frigjøre innsamlet data (`wipe`).
+- Felles kjerne (f.eks. `Core/Pixel.lua`) registrerer events først når noe faktisk bruker den.
+- Sjekk med `/nitex status`: med alle moduler av og vinduet ikke åpnet skal listen over events være tom.
 - Implementer `OnDisable` slik at modulen kan slås av uten reload der det er mulig. Si fra når en endring krever reload.
 
 ## 2. Lua-versjon

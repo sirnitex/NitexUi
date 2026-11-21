@@ -60,6 +60,7 @@ Media/             Teksturer, fonter, lyder
 |---|---|
 | `/nitex` | Åpne innstillinger |
 | `/nitex help` | Vis kommandoer i chat |
+| `/nitex status` | Vis moduler og alle events NitexUI lytter på |
 | `/nitex debug` | Debug-utskrift av/på |
 | `/nitex reset` | Nullstill innstillinger |
 | `/nitex version` | Vis versjon |

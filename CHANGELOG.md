@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.1]
+- Modules that are off use no resources: Fonts frees its captured data when switched off.
+- Pixel perfect core registers its scale events only once something uses it.
+- New /nitex status: shows module state and every event NitexUI is listening to.
+
 ## [0.6.0]
 - Removed the Modules tab. Each module now has its own on/off switch at the top of its page.
 - All modules are OFF by default; turning one on or off works live (no reload) where possible.

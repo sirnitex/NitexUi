@@ -40,6 +40,19 @@ function ns:UnregisterEvent(event, owner)
     end
 end
 
+--- Debug helper: every event currently registered, with the owner (module) that wants it.
+function ns:DumpEvents()
+    local count = 0
+    for event, list in next, handlers do
+        for owner in next, list do
+            count = count + 1
+            local name = owner == self and "Core" or (type(owner) == "table" and owner.name) or tostring(owner)
+            print("  " .. event .. "  <- " .. name)
+        end
+    end
+    return count
+end
+
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     local list = handlers[event]
     if not list then return end

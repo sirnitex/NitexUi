@@ -7,6 +7,9 @@
 --
 -- Runs: once at login, again when a Blizzard load-on-demand addon adds new font
 -- objects, and when you change the setting. Never per frame.
+--
+-- When the module is OFF: no events, no hooks, no frames, no font objects touched,
+-- and no captured data kept. Only the static tables below exist.
 
 local _, ns = ...
 local M = ns:NewModule("Fonts")
@@ -88,6 +91,8 @@ local function Restore()
         pcall(obj.SetFont, obj, o[1], o[2], o[3] or "")
         obj:SetShadowOffset(o[4], o[5])
     end
+    -- Everything is back to Blizzard's state, so drop our copies: nothing stays in memory.
+    wipe(original)
     wipe(stamp)
 end
 
