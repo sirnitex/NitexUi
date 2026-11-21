@@ -16,6 +16,7 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 - Én `.toc` med `## Interface: 120105, 16001`. Oppdater begge tallene ved nye patcher.
 - Bruk `ns.isRetail` / `ns.isForever` bare der klientene faktisk er ulike. Guard API-er som kanskje mangler i én klient (`if C_X and C_X.Func then`).
 - Hver endring synkes til begge AddOns-mappene: `G:\World of Warcraft\_retail_\Interface\AddOns\NitexUI` og `G:\World of Warcraft\_forever_\Interface\AddOns\NitexUI`.
+- Ved synk: legg filene i en NY staging-mappe hver gang (aldri gjenbruk en gammel), og kontroller etterpå med `device_list_dir` at filstørrelsene på disken er like de i repoet. En overføring kan melde "written" og likevel ha skrevet en gammel kopi.
 
 ## 1c. Moduler
 - Alle funksjoner er egne moduler (`ns:NewModule`). **Alle moduler er AV som standard** – brukeren skrur på bare det de trenger.
