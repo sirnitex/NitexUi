@@ -5,6 +5,7 @@ package-as: NitexUI
 ignore:
   - README.md
   - CHANGELOG.md
+  - CLAUDE.md
   - .editorconfig
   - .luarc.json
   - .vscode

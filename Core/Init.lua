@@ -36,11 +36,8 @@ end
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     local list = handlers[event]
     if not list then return end
-    for owner, func in pairs(list) do
-        local ok, err = pcall(func, owner, event, ...)
-        if not ok then
-            geterrorhandler()(err)
-        end
+    for owner, func in next, list do
+        func(owner, event, ...)
     end
 end)
 
