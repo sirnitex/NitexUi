@@ -5,7 +5,8 @@
     "NitexUIDB",
     "NitexUICharDB",
     "SLASH_NITEXUI1",
-    "SLASH_NITEXUI2"
+    "SLASH_NITEXUI2",
+    "NitexUI_OnAddonCompartmentClick"
   ],
   "workspace.ignoreDir": [".release", "Libs"]
 }

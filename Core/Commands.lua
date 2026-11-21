@@ -5,10 +5,15 @@ local L = ns.L
 
 local commands = {}
 
+commands[""] = function()
+    ns.Options:Toggle()
+end
+
 commands.help = function()
     ns:Print(L["HELP_HEADER"])
-    print("  /nitex debug  - " .. L["HELP_DEBUG"])
-    print("  /nitex reset  - " .. L["HELP_RESET"])
+    print("  /nitex - " .. L["CMD_OPEN"])
+    print("  /nitex debug - " .. L["HELP_DEBUG"])
+    print("  /nitex reset - " .. L["HELP_RESET"])
     print("  /nitex version - " .. L["HELP_VERSION"])
 end
 

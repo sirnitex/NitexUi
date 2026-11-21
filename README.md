@@ -29,7 +29,9 @@ Locales/           Tekststrenger (enUS er standard)
 Core/Init.lua      Namespace, event-system, modulsystem, oppstart
 Core/Utils.lua     Print/Debug og hjelpefunksjoner
 Core/Database.lua  SavedVariables med standardverdier
+Core/Theme.lua     Fargetema (aksent #33ccff)
 Core/Commands.lua  /nitex og /nui
+Options/           Innstillingsvinduet (widgets + panel)
 Modules/           Én fil per funksjon – start fra Example.lua
 Media/             Teksturer, fonter, lyder
 ```
@@ -44,7 +46,8 @@ Media/             Teksturer, fonter, lyder
 
 | Kommando | Funksjon |
 |---|---|
-| `/nitex` | Hjelp |
+| `/nitex` | Åpne innstillinger |
+| `/nitex help` | Vis kommandoer i chat |
 | `/nitex debug` | Debug-utskrift av/på |
 | `/nitex reset` | Nullstill innstillinger |
 | `/nitex version` | Vis versjon |

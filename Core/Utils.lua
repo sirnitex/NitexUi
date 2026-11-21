@@ -2,7 +2,7 @@
 
 local _, ns = ...
 
-local PREFIX = "|cff33ccffNitex|rUI: "
+local PREFIX = "|cff" .. ns.Theme.accentHex .. "Nitex|rUI: "
 
 function ns:Print(...)
     print(PREFIX .. string.join(" ", tostringall(...)))
