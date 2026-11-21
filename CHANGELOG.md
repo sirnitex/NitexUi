@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.9.1]
+- Minimap button now follows the minimap edge while dragging (OnUpdate only while the mouse is held).
+
 ## [0.9.0]
 - Optional minimap button (General > Minimap), native, no LibDBIcon. Off by default. Drag to move around the minimap edge.
 

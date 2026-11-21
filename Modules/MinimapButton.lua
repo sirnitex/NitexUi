@@ -3,8 +3,9 @@
 -- A classic round minimap button built only from native frames and Blizzard's own
 -- minimap textures (no LibDBIcon). Left-click opens the options window.
 --
--- Dragging uses Blizzard's StartMoving (no OnUpdate). When you let go, the angle from
--- the minimap centre is worked out once and the button snaps back onto the ring.
+-- Dragging keeps the button on the minimap edge: an OnUpdate script is attached ONLY while
+-- the mouse button is held, reads the cursor angle from the minimap centre and places the
+-- button on the ring. It is removed the moment you let go, so nothing runs otherwise.
 --
 -- When OFF: the button is hidden (created only the first time the module is turned on);
 -- no events, no hooks, nothing runs.
@@ -17,27 +18,34 @@ ns.defaults.minimap = { angle = 225 } -- degrees, 0 = right, counter-clockwise
 local ICON = [[Interface\AddOns\NitexUI\Media\NitexUI-Icon]]
 local button
 
+local GetCursorPosition, atan2, deg, rad, cos, sin = GetCursorPosition, math.atan2, math.deg, math.rad, math.cos, math.sin
+
 local function UpdatePosition()
-    local angle = math.rad(ns.db.minimap.angle)
-    local radius = Minimap:GetWidth() / 2 + 6
+    local angle = rad(ns.db.minimap.angle)
+    local radius = Minimap:GetWidth() / 2 + 5
     button:ClearAllPoints()
-    button:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * radius, math.sin(angle) * radius)
+    button:SetPoint("CENTER", Minimap, "CENTER", cos(angle) * radius, sin(angle) * radius)
+end
+
+-- Runs only while dragging.
+local function OnDragUpdate()
+    local mx, my = Minimap:GetCenter()
+    if not mx then return end
+    local scale = Minimap:GetEffectiveScale()
+    local cx, cy = GetCursorPosition()
+    ns.db.minimap.angle = deg(atan2(cy / scale - my, cx / scale - mx))
+    UpdatePosition()
 end
 
 local function OnDragStart(self)
     GameTooltip:Hide()
-    self:StartMoving()
+    self:LockHighlight()
+    self:SetScript("OnUpdate", OnDragUpdate)
 end
 
 local function OnDragStop(self)
-    self:StopMovingOrSizing()
-    -- One-off: angle from the minimap centre to where the button was dropped.
-    local mx, my = Minimap:GetCenter()
-    local bx, by = self:GetCenter()
-    if mx and bx then
-        ns.db.minimap.angle = math.deg(math.atan2(by - my, bx - mx))
-    end
-    UpdatePosition()
+    self:SetScript("OnUpdate", nil)
+    self:UnlockHighlight()
 end
 
 local function OnClick()
@@ -61,9 +69,6 @@ local function Create()
     button:SetSize(31, 31)
     button:SetFrameStrata("MEDIUM")
     button:SetFrameLevel(Minimap:GetFrameLevel() + 8)
-    button:SetMovable(true)
-    button:SetDontSavePosition(true)
-    button:SetClampedToScreen(true)
     button:RegisterForClicks("AnyUp")
     button:RegisterForDrag("LeftButton")
     button:SetHighlightTexture([[Interface\Minimap\UI-Minimap-ZoomButton-Highlight]])
