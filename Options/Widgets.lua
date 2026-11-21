@@ -84,21 +84,36 @@ end
 ---------------------------------------------------------------------------
 local issecretvalue = issecretvalue or function() return false end
 
-local function Paragraph_OnSizeChanged(self)
+-- The text gets an EXPLICIT width (the frame's width) before it is measured. Measuring a
+-- FontString that is only sized through anchors can happen before the layout pass, when
+-- its width is still 0: the text then "wraps" after every letter and reports a huge height,
+-- which pushed everything below the paragraph off the screen.
+local function Paragraph_Layout(self, width)
+    if not width or width <= 0 then return end
+    self.text:SetWidth(width)
     local h = self.text:GetStringHeight()
-    if h and not issecretvalue(h) then
+    if h and not issecretvalue(h) and h > 0 then
         PP.Height(self, h + 2)
     end
+end
+
+local function Paragraph_OnSizeChanged(self, width)
+    Paragraph_Layout(self, width)
+end
+
+local function Paragraph_SetText(self, text)
+    self.text:SetText(text)
+    Paragraph_Layout(self, self:GetWidth())
 end
 
 function W.Paragraph(parent, text, font)
     local f = CreateFrame("Frame", nil, parent)
     local fs = W.Text(f, font or W.FontSmall, text)
     fs:SetPoint("TOPLEFT")
-    fs:SetPoint("TOPRIGHT")
     fs:SetJustifyV("TOP")
     fs:SetSpacing(3)
     f.text = fs
+    f.SetText = Paragraph_SetText
     PP.Height(f, 16)
     f:SetScript("OnSizeChanged", Paragraph_OnSizeChanged)
     return f

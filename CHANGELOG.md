@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.10.4]
+- Fix (root cause): text paragraphs measured their height before they had a width and reported a huge height, pushing every widget below them off the screen. The text now gets an explicit width before it is measured.
+
 ## [0.10.3]
 - Fix: widgets placed below a wrapping text paragraph were not shown (Profiles > Manage).
   Pixel helpers no longer clear and re-set anchors when only a size changes.
