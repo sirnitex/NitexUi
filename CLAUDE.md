@@ -28,6 +28,23 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 - Sjekk med `/nitex status`: med alle moduler av og vinduet ikke åpnet skal listen over events være tom.
 - Implementer `OnDisable` slik at modulen kan slås av uten reload der det er mulig. Si fra når en endring krever reload.
 
+## 1d. Arkitektur (les dette før du endrer noe)
+- Repo: `sirnitex/NitexUi` (GitHub, branch `main`). Lokalt testes det i AddOns-mappene (se 1b). Nyeste versjon står i `NitexUI.toc` og `CHANGELOG.md`.
+- Lasterekkefølge i `.toc`: Locales → Core (Init, Theme, Pixel, Utils, Database, Commands) → Modules → Options (Widgets, Panel, Pages/*).
+- `Core/Init.lua`: namespace `ns`, felles event-system `ns:RegisterEvent(event, owner, func)`, modulsystem (`ns:NewModule`, `ns:SetModuleEnabled`, `OnEnable`/`OnDisable`).
+- `Core/Database.lua`: profiler i ElvUI/AceDB-stil, native. `ns.db` = aktiv profil. `profileKeys` per karakter, `defaultProfile` for alle andre. Import/eksport `!NUI1!` via `C_EncodingUtil`. Bytte/kopiere/nullstille profil = `ReloadUI()`.
+- Standardverdier: hver modul legger til `ns.defaults.<navn> = {...}` i sin egen fil.
+- `Options/Panel.lua`: vinduet (`/nitex`). Sider registreres med `Options:RegisterPage{ key, label, order, desc, build | subtabs = {...} }`. Hjelpere: `Options.NewPage`, `page:Add(widget, gap, keepWidth)`, `Options.Columns` / `Options.EndColumns`, `Options.ModuleToggle`. Sidebygging er pakket i `SafeBuild` (feil skrives i chat).
+- `Options/Widgets.lua`: `W.Header`, `W.Paragraph`, `W.Button`, `W.Toggle`, `W.Dropdown` (items kan være funksjon), `W.ColorRow`, `W.EditBox`, `W.Tab`, `W.SubTab`. Alle bruker `ns.PP`.
+- Sider: General (General, Profiles) · Global Settings (Fonts) · Interface (General) · Nameplates (Health Colors) · About.
+- Moduler: `MinimapButton`, `Fonts`, `InterfaceGeneral`, `NameplateColors`. Mal: `Modules/_Template.lua`.
+- Kjente fallgruver: mål aldri tekst før den har bredde (gi FontString eksplisitt `SetWidth`); gjør aldri aritmetikk på verdier som kan være hemmelige (`issecretvalue`); `PP.Point` med samme punktnavn erstatter ankeret.
+
+## 1e. Spar bruk
+- Pakk flere endringer i én runde. Synk til AddOns-mappene én gang per oppgave, ikke per liten rettelse.
+- Sjekk layout og fallgruvene i 1d før noe sendes til test, så vi slipper feilsøkingsrunder.
+- Korte svar. Les bare filene som trengs.
+
 ## 2. Lua-versjon
 - Kun Lua 5.1, slik WoW-klienten bruker. Ingen `goto`, ingen heltallsdivisjon `//`, ingen bit-operatorer `& | ~` (bruk `bit.band` osv.), ingen `table.unpack` (bruk `unpack`).
 
