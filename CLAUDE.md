@@ -17,6 +17,12 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 - Bruk `ns.isRetail` / `ns.isForever` bare der klientene faktisk er ulike. Guard API-er som kanskje mangler i én klient (`if C_X and C_X.Func then`).
 - Hver endring synkes til begge AddOns-mappene: `G:\World of Warcraft\_retail_\Interface\AddOns\NitexUI` og `G:\World of Warcraft\_forever_\Interface\AddOns\NitexUI`.
 
+## 1c. Moduler
+- Alle funksjoner er egne moduler (`ns:NewModule`). **Alle moduler er AV som standard** – brukeren skrur på bare det de trenger.
+- Ingen samlet "Modules"-tab. Hver modul har sin egen av/på-bryter øverst på sin side (`Options.ModuleToggle`).
+- En modul gjør ingenting (ingen events, ingen hooks, ingen frames) før den er slått på.
+- Implementer `OnDisable` slik at modulen kan slås av uten reload der det er mulig. Si fra når en endring krever reload.
+
 ## 2. Lua-versjon
 - Kun Lua 5.1, slik WoW-klienten bruker. Ingen `goto`, ingen heltallsdivisjon `//`, ingen bit-operatorer `& | ~` (bruk `bit.band` osv.), ingen `table.unpack` (bruk `unpack`).
 

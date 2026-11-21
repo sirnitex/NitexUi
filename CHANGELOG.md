@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.0]
+- Removed the Modules tab. Each module now has its own on/off switch at the top of its page.
+- All modules are OFF by default; turning one on or off works live (no reload) where possible.
+- Settings of a module that is off are dimmed and cannot be clicked.
+- Example module renamed to Modules/_Template.lua and no longer loaded.
+
 ## [0.5.0]
 - Global Settings page with sub-tabs. First sub-tab: Fonts.
 - Fonts module: replace the font of all default game text via Blizzard's font objects (GetFonts), with Slug outline as default. Restores originals when turned off.

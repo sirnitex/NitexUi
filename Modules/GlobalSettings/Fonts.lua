@@ -49,7 +49,6 @@ end
 -- Defaults (merged into SavedVariables by Core/Database.lua)
 ns.defaults.global = ns.defaults.global or {}
 ns.defaults.global.fonts = {
-    enabled = true,
     font = "FRIZQT",
     outline = "SLUG",
 }
@@ -93,12 +92,8 @@ local function Restore()
 end
 
 function M:Apply()
+    if not self.enabled or not GetFonts then return end
     local db = ns.db.global.fonts
-    if not db.enabled then
-        Restore()
-        return
-    end
-    if not GetFonts then return end
 
     local file = M.FileFor(db.font)
     local outline = outlineByValue[db.outline] or M.outlines[1]
@@ -114,6 +109,7 @@ end
 
 --- Call after changing a setting: re-applies to every font object.
 function M:Update()
+    if not self.enabled then return end
     generation = generation + 1
     self:Apply()
 end
@@ -124,9 +120,8 @@ end
 function M:OnInitialize()
     -- Fonts the client reads from globals when it creates text. Must be set before the
     -- world loads (here, at ADDON_LOADED); changing them later needs a relog.
-    local db = ns.db.global.fonts
-    if db.enabled then
-        local file = M.FileFor(db.font)
+    if ns:IsModuleEnabled("Fonts") then
+        local file = M.FileFor(ns.db.global.fonts.font)
         STANDARD_TEXT_FONT = file
         UNIT_NAME_FONT = file
         DAMAGE_TEXT_FONT = file
@@ -134,9 +129,14 @@ function M:OnInitialize()
 end
 
 function M:OnEnable()
-    generation = 1
+    generation = generation + 1
     self:Apply()
     -- Blizzard load-on-demand UI (e.g. Blizzard_Collections) can add new font objects.
     -- Only objects we have not seen yet are touched (stamp check), so this is cheap.
     ns:RegisterEvent("ADDON_LOADED", self, self.Apply)
+end
+
+function M:OnDisable()
+    ns:UnregisterEvent("ADDON_LOADED", self)
+    Restore()
 end

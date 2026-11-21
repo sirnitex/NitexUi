@@ -5,7 +5,7 @@ local _, ns = ...
 -- Account-wide defaults (NitexUIDB)
 ns.defaults = {
     debug = false,
-    modules = {},  -- [moduleName] = true/false
+    modules = {},  -- [moduleName] = true when the user turned it on. Missing = off.
     profile = {},
 }
 

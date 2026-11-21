@@ -14,10 +14,9 @@ local function BuildFonts(parent)
     local db = ns.db.global.fonts
     local p = Options.NewPage(parent)
 
-    p:Add(W.Header(p, L["SECTION_FONT"]), 18)
-    p:Add(W.Toggle(p, L["OPT_FONTS_ENABLE"], L["OPT_FONTS_ENABLE_DESC"],
-        function() return db.enabled end,
-        function(v) db.enabled = v; Fonts:Update() end), 10)
+    Options.ModuleToggle(p, "Fonts", L["OPT_FONTS_ENABLE"], L["OPT_FONTS_ENABLE_DESC"])
+
+    p:Add(W.Header(p, L["SECTION_FONT"]), 14)
 
     -- Font + outline side by side
     local colW = math.floor((Options.CONTENT_W - 24) / 2)
@@ -32,6 +31,7 @@ local function BuildFonts(parent)
         function(v) db.outline = v; Fonts:Update() end)
     PP.Point(outlineDD, "TOPLEFT", fontDD, "TOPRIGHT", 24, 0)
     p:Track(outlineDD)
+    p:Depend(outlineDD)
 
     -- Preview box: uses the real font objects, so it shows exactly what the game will show.
     p:Add(W.Header(p, L["SECTION_PREVIEW"]), 26)

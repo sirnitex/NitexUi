@@ -40,7 +40,7 @@ Core/Theme.lua     Fargetema (aksent #33ccff)
 Core/Pixel.lua     Pixel perfect-hjelpere (borders, størrelser, ankere)
 Core/Commands.lua  /nitex og /nui
 Options/           Innstillingsvinduet (widgets + panel)
-Modules/           Én fil per funksjon – start fra Example.lua
+Modules/           Én fil per funksjon – start fra _Template.lua (alle moduler er AV som standard)
   GlobalSettings/Fonts.lua   Font og outline for hele spillet
 Options/Pages/     Innstillingssider som moduler registrerer
 Media/Fonts/       Egne fonter (.ttf/.otf) – se Modules/GlobalSettings/Fonts.lua
@@ -49,9 +49,10 @@ Media/             Teksturer, fonter, lyder
 
 ## Ny modul
 
-1. Kopier `Modules/Example.lua` til `Modules/MinModul.lua`
-2. Endre navnet i `ns:NewModule("MinModul")`
-3. Legg filen til nederst i `NitexUI.toc`
+1. Kopier `Modules/_Template.lua` til `Modules/MinModul.lua`
+2. Endre navnet i `ns:NewModule("MinModul")`, og skriv `OnEnable` / `OnDisable`
+3. Legg filen til i `NitexUI.toc`
+4. Lag innstillingssiden i `Options/Pages/` og start den med `Options.ModuleToggle(page, "MinModul", ...)`
 
 ## Kommandoer
 

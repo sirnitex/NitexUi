@@ -20,15 +20,12 @@ L["CMD_HELP"] = "list commands in chat"
 -- Options: pages
 L["PAGE_GENERAL"] = "General"
 L["PAGE_GENERAL_DESC"] = "Core settings for NitexUI."
-L["PAGE_MODULES"] = "Modules"
-L["PAGE_MODULES_DESC"] = "Turn individual features on or off."
 L["PAGE_ABOUT"] = "About"
 L["PAGE_ABOUT_DESC"] = "Version and commands."
 
 -- Options: sections
 L["SECTION_DEVELOPER"] = "Developer"
 L["SECTION_DATA"] = "Data"
-L["SECTION_MODULES"] = "Available modules"
 L["SECTION_COMMANDS"] = "Slash commands"
 
 -- Options: controls
@@ -38,7 +35,6 @@ L["RESET_DESC"] = "Restore every NitexUI setting to its default. Your UI will re
 L["RESET_CONFIRM"] = "Reset all NitexUI settings and reload the UI?"
 L["BTN_RESET"] = "Reset settings"
 L["BTN_RELOAD"] = "Reload UI"
-L["RELOAD_NOTE"] = "Module changes take effect after a UI reload."
 L["ABOUT_TEXT"] = "Version %s\nA lightweight interface addon built only on Blizzard's native API."
 
 -- Global Settings
@@ -47,8 +43,8 @@ L["PAGE_GLOBAL_DESC"] = "Settings that apply to the whole game."
 L["SUB_FONTS"] = "Fonts"
 L["SECTION_FONT"] = "Game font"
 L["SECTION_PREVIEW"] = "Preview"
-L["OPT_FONTS_ENABLE"] = "Replace game fonts"
-L["OPT_FONTS_ENABLE_DESC"] = "Use the font and outline below for all default Blizzard text."
+L["OPT_FONTS_ENABLE"] = "Enable Fonts"
+L["OPT_FONTS_ENABLE_DESC"] = "Use the font and outline below for all default game text. Off by default."
 L["OPT_FONT"] = "Font"
 L["OPT_OUTLINE"] = "Outline"
 L["FONTS_NOTE"] = "Most text updates instantly. Unit names and floating combat text update after a reload. Slug renders text on the GPU for very crisp outlines, so text shadows are turned off while it is active."

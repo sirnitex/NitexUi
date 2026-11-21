@@ -28,6 +28,13 @@ local function Page_Add(self, widget, gap, keepWidth)
     end
     self.cursor = widget
     self:Track(widget)
+    if self.blocker then self:Depend(widget) end
+    return widget
+end
+
+--- Mark a widget as belonging to the page's module: dimmed while the module is off.
+local function Page_Depend(self, widget)
+    self.dependents[#self.dependents + 1] = widget
     return widget
 end
 
@@ -49,6 +56,7 @@ local function NewPage(parent, title, subtitle)
     p:SetAllPoints()
     p:Hide()
     p.widgets = {}
+    p.dependents = {}
 
     -- Fixed-height title block. Layout anchors to this frame, never to a FontString,
     -- because text heights are not whole pixels.
@@ -66,10 +74,61 @@ local function NewPage(parent, title, subtitle)
     p.cursor = top
     p.Add = Page_Add
     p.Track = Page_Track
+    p.Depend = Page_Depend
     p.Refresh = Page_Refresh
     return p
 end
 Options.NewPage = NewPage
+
+---------------------------------------------------------------------------
+-- Module on/off switch for a page.
+-- Everything added to the page after this switch belongs to the module: while the
+-- module is off it is dimmed and an invisible blocker swallows clicks on it.
+---------------------------------------------------------------------------
+local DIM_ALPHA = 0.35
+
+local function ModuleToggle_Update(page)
+    local on = ns:IsModuleEnabled(page.moduleName)
+    page.blocker:SetShown(not on)
+    for i = 1, #page.dependents do
+        local w = page.dependents[i]
+        w:SetAlpha(on and 1 or DIM_ALPHA)
+        if not on and w.Close then w:Close() end
+    end
+end
+
+function Options.ModuleToggle(page, moduleName, label, desc)
+    page.moduleName = moduleName
+
+    local toggle = page:Add(W.Toggle(page, label, desc,
+        function() return ns:IsModuleEnabled(moduleName) end,
+        function(v)
+            ns:SetModuleEnabled(moduleName, v)
+            ModuleToggle_Update(page)
+            page:Refresh()
+        end), 18)
+    toggle.isModuleToggle = true
+
+    local blocker = CreateFrame("Frame", nil, page)
+    PP.Point(blocker, "TOPLEFT", toggle, "BOTTOMLEFT", 0, 0)
+    blocker:SetPoint("BOTTOMRIGHT")
+    blocker:SetFrameLevel(page:GetFrameLevel() + 50)
+    blocker:EnableMouse(true)
+    page.blocker = blocker
+
+    local base = page.Refresh
+    page.Refresh = function(self)
+        base(self)
+        ModuleToggle_Update(self)
+    end
+
+    -- A thin divider separates the switch from the module's own settings.
+    local divider = CreateFrame("Frame", nil, page)
+    PP.Height(divider, 1)
+    W.HLine(divider, T.border)
+    page:Add(divider, 8)
+    return toggle
+end
 
 ---------------------------------------------------------------------------
 -- Page with sub-tabs: title, a sub-tab bar, and lazily built sub-pages below it.
@@ -172,26 +231,6 @@ Options:RegisterPage{ key = "general", label = L["PAGE_GENERAL"], order = 10, bu
     p:Add(W.Header(p, L["SECTION_DATA"]), 26)
     p:Add(W.Paragraph(p, L["RESET_DESC"]), 10)
     p:Add(W.Button(p, L["BTN_RESET"], 160, function() StaticPopup_Show("NITEXUI_RESET") end), 12, true)
-    return p
-end }
-
-Options:RegisterPage{ key = "modules", label = L["PAGE_MODULES"], order = 80, build = function(parent)
-    local p = NewPage(parent, L["PAGE_MODULES"], L["PAGE_MODULES_DESC"])
-    p:Add(W.Header(p, L["SECTION_MODULES"]), 22)
-
-    local names = {}
-    for name in next, ns.modules do names[#names + 1] = name end
-    table.sort(names)
-
-    for i = 1, #names do
-        local name = names[i]
-        p:Add(W.Toggle(p, name, nil,
-            function() return ns.db.modules[name] ~= false end,
-            function(v) ns.db.modules[name] = v end), i == 1 and 10 or 4)
-    end
-
-    p:Add(W.Paragraph(p, L["RELOAD_NOTE"]), 18)
-    p:Add(W.Button(p, L["BTN_RELOAD"], 140, function() ReloadUI() end), 10, true)
     return p
 end }
 

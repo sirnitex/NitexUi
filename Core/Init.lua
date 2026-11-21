@@ -51,7 +51,11 @@ end)
 ---------------------------------------------------------------------------
 -- Modules
 ---------------------------------------------------------------------------
---- Create a new module. Modules can define :OnInitialize() and :OnEnable().
+--- Create a new module. Modules can define:
+---   :OnInitialize()  ADDON_LOADED, always (SavedVariables ready). Keep it to setup only.
+---   :OnEnable()      when the module is turned on (at login, or live from the options).
+---   :OnDisable()     when the module is turned off live. Undo what OnEnable did if possible.
+--- Every module is OFF by default; the user turns on only what they need.
 function ns:NewModule(name)
     assert(not self.modules[name], "Module already exists: " .. name)
     local module = { name = name }
@@ -61,6 +65,23 @@ end
 
 function ns:GetModule(name)
     return self.modules[name]
+end
+
+function ns:IsModuleEnabled(name)
+    return self.db.modules[name] == true
+end
+
+function ns:SetModuleEnabled(name, on)
+    local module = self.modules[name]
+    on = on and true or false
+    self.db.modules[name] = on
+    if on and not module.enabled then
+        module.enabled = true
+        if module.OnEnable then module:OnEnable() end
+    elseif not on and module.enabled then
+        module.enabled = false
+        if module.OnDisable then module:OnDisable() end
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -81,8 +102,8 @@ ns:RegisterEvent("PLAYER_LOGIN", ns, function(self)
     self:UnregisterEvent("PLAYER_LOGIN", self)
 
     for name, module in pairs(self.modules) do
-        local enabled = self.db.modules[name]
-        if enabled == nil or enabled then
+        if self:IsModuleEnabled(name) then
+            module.enabled = true
             if module.OnEnable then module:OnEnable() end
         end
     end
