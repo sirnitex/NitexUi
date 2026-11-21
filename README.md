@@ -42,6 +42,7 @@ Core/Commands.lua  /nitex og /nui
 Options/           Innstillingsvinduet (widgets + panel)
 Modules/           Én fil per funksjon – start fra _Template.lua (alle moduler er AV som standard)
   GlobalSettings/Fonts.lua   Font og outline for hele spillet
+  Interface/General.lua      Skjul bag-bar og mikro-meny
 Options/Pages/     Innstillingssider som moduler registrerer
 Media/Fonts/       Egne fonter (.ttf/.otf) – se Modules/GlobalSettings/Fonts.lua
 Media/             Teksturer, fonter, lyder

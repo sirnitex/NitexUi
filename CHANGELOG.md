@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.7.0]
+- Interface page with sub-tabs. First sub-module: General.
+- Interface: General can hide the bag bar and the micro menu (moved under a hidden parent; restored live when turned off, deferred until combat ends).
+
 ## [0.6.1]
 - Modules that are off use no resources: Fonts frees its captured data when switched off.
 - Pixel perfect core registers its scale events only once something uses it.

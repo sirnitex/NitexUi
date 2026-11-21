@@ -53,6 +53,19 @@ L["OPT_FONT"] = "Font"
 L["OPT_OUTLINE"] = "Outline"
 L["FONTS_NOTE"] = "Most text updates instantly. Unit names and floating combat text update after a reload. Slug renders text on the GPU for very crisp outlines, so text shadows are turned off while it is active."
 
+-- Interface
+L["PAGE_INTERFACE"] = "Interface"
+L["PAGE_INTERFACE_DESC"] = "Changes to Blizzard's default interface."
+L["SUB_GENERAL"] = "General"
+L["OPT_IFGENERAL_ENABLE"] = "Enable Interface: General"
+L["OPT_IFGENERAL_ENABLE_DESC"] = "Turn on the options below. Off by default."
+L["SECTION_HIDE_BLIZZARD"] = "Hide Blizzard elements"
+L["OPT_HIDE_BAGBAR"] = "Hide bag bar"
+L["OPT_HIDE_BAGBAR_DESC"] = "Hides the backpack and bag slot buttons. Bags still open with your keybinds."
+L["OPT_HIDE_MICROMENU"] = "Hide micro menu"
+L["OPT_HIDE_MICROMENU_DESC"] = "Hides the menu buttons (character, spellbook, talents ...). Keybinds still work."
+L["IFGENERAL_NOTE"] = "Changes apply instantly and are undone when you turn them off. If you are in combat, they are applied as soon as combat ends."
+
 -- Blizzard settings launcher
 L["SETTINGS_LAUNCHER_DESC"] = "NitexUI has its own options window."
 L["BTN_OPEN_OPTIONS"] = "Open NitexUI options"
