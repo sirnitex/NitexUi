@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.10.2]
+- If an options page fails to build, the error is now printed in chat instead of leaving an empty page.
+
 ## [0.10.1]
 - Fix: Profiles page stopped building after the character line (realm name / text height could be secret).
 

@@ -16,6 +16,7 @@ Options.CONTENT_W = CONTENT_W
 
 local window
 local pages, tabs = {}, {}
+
 local registry = {} -- registered pages, sorted by order
 
 ---------------------------------------------------------------------------
@@ -79,6 +80,20 @@ local function NewPage(parent, title, subtitle)
     return p
 end
 Options.NewPage = NewPage
+
+--- Build a page, and if it fails, say so in chat (with the error) instead of failing silently.
+--- Only runs when a page is opened for the first time.
+local function SafeBuild(name, build, parent)
+    local ok, result = xpcall(build, function(err)
+        ns:Print(("|cffff5555Could not build the \"%s\" page:|r %s"):format(name, tostring(err)))
+        geterrorhandler()(err)
+        return err
+    end, parent)
+    if ok then return result end
+    -- Empty placeholder so the window keeps working.
+    local p = NewPage(parent)
+    return p
+end
 
 ---------------------------------------------------------------------------
 -- Two columns below the page's current position.
@@ -177,7 +192,7 @@ end
 local function SubPages_Select(self, key)
     local info = self.subs[key]
     if not info.page then
-        info.page = info.build(self.area)
+        info.page = SafeBuild(info.label, info.build, self.area)
     end
     for k, sub in next, self.subs do
         if sub.page then sub.page:SetShown(k == key) end
@@ -314,7 +329,7 @@ local function SelectPage(key)
     if not pages[key] then
         for i = 1, #registry do
             if registry[i].key == key then
-                pages[key] = BuildPage(registry[i], window.content)
+                pages[key] = SafeBuild(registry[i].label, function(parent) return BuildPage(registry[i], parent) end, window.content)
                 break
             end
         end
