@@ -1,7 +1,7 @@
 -- NitexUI: Options > General > Profiles  (ElvUI-style, native)
 --
 --   Profiles       active profile for this character + default profile for all other characters
---   Manage         new, duplicate, reset, copy from, delete
+--   Manage         new (a copy of the current profile), reset, copy from, delete
 --   Import/Export  shareable profile strings (Blizzard's C_EncodingUtil)
 --
 -- Every destructive action asks first with Blizzard's StaticPopup.
@@ -138,12 +138,10 @@ function Options.BuildProfiles(parent)
     p:Add(W.Header(p, L["SECTION_MANAGE"]), 22)
     local l2, r2 = Options.Columns(p, 10)
 
+    -- A new profile always starts as a copy of the profile you are in.
     l2:Add(W.Button(p, L["BTN_NEW_PROFILE"], COL_W, function()
-        StaticPopup_Show("NITEXUI_NEW_PROFILE")
+        StaticPopup_Show("NITEXUI_NEW_PROFILE", ns:GetCurrentProfile(), nil, { copyFrom = ns:GetCurrentProfile() })
     end))
-    l2:Add(W.Button(p, L["BTN_DUPLICATE_PROFILE"], COL_W, function()
-        StaticPopup_Show("NITEXUI_NEW_PROFILE", nil, nil, { copyFrom = ns:GetCurrentProfile() })
-    end), 8)
     l2:Add(W.Button(p, L["BTN_RESET_PROFILE"], COL_W, function()
         StaticPopup_Show("NITEXUI_RESET", ns:GetCurrentProfile())
     end), 8)

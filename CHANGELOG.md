@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.11.2]
+- New profile now starts as a copy of the current profile. The separate Duplicate button is removed.
+
 ## [0.11.1]
 - Fix: a section after two columns started under the right column when it was the taller one.
 
