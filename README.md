@@ -45,6 +45,8 @@ Modules/           Én fil per funksjon – start fra _Template.lua (alle module
   Interface/General.lua      Skjul bag-bar og mikro-meny
   Nameplates/Colors.lua      Helsebarfarger på Blizzards nameplates (threat, quest, type)
 Options/Pages/     Innstillingssider som moduler registrerer
+Media/NitexUI-Icon.tga  Ikon i spillet (addon-liste, minimap-meny, innstillinger)
+Branding/          Logo: SVG-kilde + PNG 512/400 for CurseForge/Wago (pakkes ikke med)
 Media/Fonts/       Egne fonter (.ttf/.otf) – se Modules/GlobalSettings/Fonts.lua
 Media/             Teksturer, fonter, lyder
 ```

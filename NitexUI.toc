@@ -2,8 +2,8 @@
 ## Title: |cff33ccffNitex|rUI
 ## Notes: A lightweight UI addon for World of Warcraft Retail and Forever.
 ## Author: Nitex
-## Version: 0.8.1
-## IconTexture: Interface\Icons\INV_Misc_Gear_01
+## Version: 0.8.2
+## IconTexture: Interface\AddOns\NitexUI\Media\NitexUI-Icon
 ## SavedVariables: NitexUIDB
 ## SavedVariablesPerCharacter: NitexUICharDB
 ## Category: User Interface

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.8.2]
+- Addon icon/logo: used in the addon list, the minimap addon compartment and the options window title bar.
+- Branding/ holds the SVG source and PNGs for CurseForge/Wago (not packaged).
+
 ## [0.8.1]
 - Forever: mobs tagged by another player (UnitIsTapDenied) get the tapped colour with top priority.
 

@@ -350,8 +350,13 @@ local function Build()
     W.Fill(header, "BACKGROUND", T.header):SetAllPoints()
     W.HLine(header, T.accentDim)
 
+    local logo = header:CreateTexture(nil, "ARTWORK")
+    logo:SetTexture([[Interface\AddOns\NitexUI\Media\NitexUI-Icon]])
+    PP.Size(logo, 28, 28)
+    PP.Point(logo, "TOPLEFT", header, "TOPLEFT", 12, -(HEADER_H - 28) / 2)
+
     local title = W.Text(header, W.FontTitle, "|cff" .. T.accentHex .. "Nitex|rUI")
-    title:SetPoint("LEFT", 18, 0)
+    title:SetPoint("LEFT", logo, "RIGHT", 8, 0)
     local version = W.Text(header, W.FontSmall, "v" .. ns.version)
     version:SetPoint("BOTTOMLEFT", title, "BOTTOMRIGHT", 8, 1)
 
