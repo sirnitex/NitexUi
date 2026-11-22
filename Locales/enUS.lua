@@ -101,6 +101,17 @@ L["OPT_HIDE_BAGBAR_DESC"] = "Hides the backpack and bag slot buttons. Bags still
 L["OPT_HIDE_MICROMENU"] = "Hide micro menu"
 L["OPT_HIDE_MICROMENU_DESC"] = "Hides the menu buttons (character, spellbook, talents ...). Keybinds still work."
 L["IFGENERAL_NOTE"] = "Changes apply instantly and are undone when you turn them off. If you are in combat, they are applied as soon as combat ends."
+L["SUB_MINIMAP"] = "Minimap"
+L["OPT_IFMINIMAP_ENABLE"] = "Enable Interface: Minimap"
+L["OPT_IFMINIMAP_ENABLE_DESC"] = "Turn on the options below. Off by default."
+L["SECTION_MINIMAP_BUTTONS"] = "Minimap buttons"
+L["OPT_MM_MOUSEOVER"] = "Show buttons only on mouseover"
+L["OPT_MM_MOUSEOVER_DESC"] = "Minimap buttons are hidden until you hover the minimap."
+L["OPT_MM_ADDONS"] = "Include addon buttons"
+L["OPT_MM_ADDONS_DESC"] = "Buttons that other addons place on the minimap (including NitexUI's own)."
+L["OPT_MM_BLIZZARD"] = "Include Blizzard buttons"
+L["OPT_MM_BLIZZARD_DESC"] = "Addon compartment, expansion summary, tracking and calendar."
+L["IFMINIMAP_NOTE"] = "The clock, zone text and mail indicator always stay visible. Buttons are only made transparent, so they still work if you hover them."
 
 -- Nameplates
 L["PAGE_NAMEPLATES"] = "Nameplates"

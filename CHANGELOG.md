@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.12.0]
+- New module Interface > Minimap: show minimap buttons only on mouseover (addon buttons and/or Blizzard buttons). No OnUpdate; uses OnEnter/OnLeave hooks and alpha only.
+
 ## [0.11.2]
 - New profile now starts as a copy of the current profile. The separate Duplicate button is removed.
 
