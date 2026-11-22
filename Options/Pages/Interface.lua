@@ -82,6 +82,28 @@ local function BuildCharacter(parent)
 end
 
 ---------------------------------------------------------------------------
+-- Sub-tab: Tooltip
+---------------------------------------------------------------------------
+local function BuildTooltip(parent)
+    local M = ns.InterfaceTooltip
+    local db = ns.db.interface.tooltip
+    local p = Options.NewPage(parent)
+
+    Options.ModuleToggle(p, "InterfaceTooltip", L["OPT_IFTOOLTIP_ENABLE"], L["OPT_IFTOOLTIP_ENABLE_DESC"])
+
+    p:Add(W.Header(p, L["SECTION_TOOLTIP"]), 14)
+    p:Add(W.Toggle(p, L["OPT_TT_HIDEHEALTH"], L["OPT_TT_HIDEHEALTH_DESC"],
+        function() return db.hideHealthBar end,
+        function(v) db.hideHealthBar = v; M:Apply() end), 10)
+    p:Add(W.Toggle(p, L["OPT_TT_CLASSNAMES"], L["OPT_TT_CLASSNAMES_DESC"],
+        function() return db.classColorNames end,
+        function(v) db.classColorNames = v; M:Apply() end), 6)
+
+    p:Add(W.Paragraph(p, L["IFTOOLTIP_NOTE"]), 16)
+    return p
+end
+
+---------------------------------------------------------------------------
 -- Register
 ---------------------------------------------------------------------------
 Options:RegisterPage{
@@ -93,5 +115,6 @@ Options:RegisterPage{
         { key = "general", label = L["SUB_GENERAL"], build = BuildGeneral },
         { key = "minimap", label = L["SUB_MINIMAP"], build = BuildMinimap },
         { key = "character", label = L["SUB_CHARACTER"], build = BuildCharacter },
+        { key = "tooltip", label = L["SUB_TOOLTIP"], build = BuildTooltip },
     },
 }

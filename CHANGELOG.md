@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.20.0]
+- New Interface > Tooltip (module, off by default): hide the health bar under unit tooltips, and class-coloured player names.
+
 ## [0.19.0]
 - Character Panel: shorter enchant text ("Enchant Helm - " removed, stat names abbreviated) and narrower text, so the left and right columns no longer run into each other.
 - Character Panel (Retail): red "Missing enchant" on items that can be enchanted but are not (head, shoulder, chest, legs, feet, rings, weapons; max level only). Own switch.
