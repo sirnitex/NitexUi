@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.22.0]
+- New page Damage Meters (module, off by default) for Blizzard's own damage meter: snap windows to each other (same width and height, edge to edge), hide the rank number, and short numbers (1.5M instead of 1500K).
+
 ## [0.21.0]
 - Interface > General: while the micro menu is hidden, the queue status eye can be moved with Shift + drag. The spot is saved per profile; new "Reset eye position" button.
 
