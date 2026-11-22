@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.16.1]
+- Nameplates > Border: Retail only (hidden on Forever). Border now hugs the health bar itself and the fill is flat while the module is on, so there are no gaps in the corners.
+
 ## [0.16.0]
 - New module Nameplates > Border (test): replaces Blizzard's nameplate border with a 1px line, with its own colour for your target.
 

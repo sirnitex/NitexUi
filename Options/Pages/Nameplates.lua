@@ -96,13 +96,18 @@ end
 ---------------------------------------------------------------------------
 -- Register
 ---------------------------------------------------------------------------
+local subtabs = {
+    { key = "colors", label = L["SUB_HEALTHCOLORS"], build = BuildColors },
+}
+-- Border: Retail (Midnight) nameplates only.
+if ns.isRetail then
+    subtabs[#subtabs + 1] = { key = "border", label = L["SUB_NPBORDER"], build = BuildBorder }
+end
+
 Options:RegisterPage{
     key = "nameplates",
     label = L["PAGE_NAMEPLATES"],
     desc = L["PAGE_NAMEPLATES_DESC"],
     order = 40,
-    subtabs = {
-        { key = "colors", label = L["SUB_HEALTHCOLORS"], build = BuildColors },
-        { key = "border", label = L["SUB_NPBORDER"], build = BuildBorder },
-    },
+    subtabs = subtabs,
 }

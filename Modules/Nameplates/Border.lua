@@ -12,12 +12,18 @@
 --     line on the pixel grid without any per-frame work.
 --   * Your target gets its own border colour (optional), so the target is still easy to see.
 --
--- Events (only while ON): NAME_PLATE_UNIT_ADDED, NAME_PLATE_UNIT_REMOVED, PLAYER_TARGET_CHANGED.
+--   * The bar's fill texture is swapped for a flat one while ON (Blizzard's fill has rounded
+--     corners, which leave gaps against a square border). The original is put back when OFF.
+--   * Lines are anchored to the health bar itself, so the fill meets the border exactly.
+--
+-- Retail only. Events (only while ON): NAME_PLATE_UNIT_ADDED, NAME_PLATE_UNIT_REMOVED, PLAYER_TARGET_CHANGED.
 -- Forbidden nameplates (friendly plates in instances) are never touched.
 -- When OFF: no events; every plate gets Blizzard's border back. Lines already created stay
 -- hidden in memory until /reload (textures cannot be destroyed).
 
 local _, ns = ...
+if not ns.isRetail then return end -- Retail (Midnight) nameplates only
+
 local M = ns:NewModule("NameplateBorder")
 ns.NameplateBorder = M
 
@@ -53,6 +59,8 @@ local function NewLine(c)
     return t
 end
 
+local FLAT = [[Interface\Buttons\WHITE8X8]]
+
 local function CreateSkin(c)
     local s = { container = c, bar = c.healthBar }
     s.top, s.bottom, s.left, s.right = NewLine(c), NewLine(c), NewLine(c), NewLine(c)
@@ -65,7 +73,7 @@ end
 
 --- Thickness = 1 physical pixel at the plate's current scale. Lines sit just outside the bar.
 local function Layout(s)
-    local c = s.container
+    local c = s.bar
     local px = GetPixelToUIUnitFactor() / c:GetEffectiveScale()
     local top, bottom, left, right = s.top, s.bottom, s.left, s.right
     top:ClearAllPoints()
@@ -104,10 +112,27 @@ local function SetBlizzard(s, shown)
     if s.container.border then s.container.border:SetAlpha(a) end
 end
 
+-- Flat fill while ON; Blizzard's own fill (atlas or file) restored when OFF.
+local function SetFlatFill(s, on)
+    local tex = s.bar:GetStatusBarTexture()
+    if not tex then return end
+    if on then
+        if not s.fillSaved then
+            s.fillAtlas, s.fillFile = tex:GetAtlas(), tex:GetTexture()
+            s.fillSaved = true
+        end
+        tex:SetTexture(FLAT)
+    elseif s.fillSaved then
+        if s.fillAtlas then tex:SetAtlas(s.fillAtlas) elseif s.fillFile then tex:SetTexture(s.fillFile) end
+        s.fillSaved = nil
+    end
+end
+
 local function ShowSkin(s, on)
     s.top:SetShown(on); s.bottom:SetShown(on); s.left:SetShown(on); s.right:SetShown(on)
     s.bg:SetShown(on)
     SetBlizzard(s, not on)
+    SetFlatFill(s, on)
 end
 
 ---------------------------------------------------------------------------
