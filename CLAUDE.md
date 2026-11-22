@@ -36,8 +36,8 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 - Standardverdier: hver modul legger til `ns.defaults.<navn> = {...}` i sin egen fil.
 - `Options/Panel.lua`: vinduet (`/nitex`). Sider registreres med `Options:RegisterPage{ key, label, order, desc, build | subtabs = {...} }`. Hjelpere: `Options.NewPage`, `page:Add(widget, gap, keepWidth)`, `Options.Columns` / `Options.EndColumns`, `Options.ModuleToggle`. Sidebygging er pakket i `SafeBuild` (feil skrives i chat).
 - `Options/Widgets.lua`: `W.Header`, `W.Paragraph`, `W.Button`, `W.Toggle`, `W.Dropdown` (items kan være funksjon), `W.ColorRow`, `W.EditBox`, `W.Tab`, `W.SubTab`. Alle bruker `ns.PP`.
-- Sider: General (General, Profiles) · Global Settings (Fonts) · Interface (General, Minimap) · Nameplates (Health Colors) · About.
-- Moduler: `MinimapButton`, `Fonts`, `InterfaceGeneral`, `InterfaceMinimap`, `NameplateColors`. Mal: `Modules/_Template.lua`.
+- Sider: General (General, Profiles) · Global Settings (Fonts) · Interface (General, Minimap) · Quality of Life (General) · Nameplates (Health Colors) · About.
+- Moduler: `MinimapButton`, `Fonts`, `InterfaceGeneral`, `InterfaceMinimap`, `QualityOfLife`, `NameplateColors`. Mal: `Modules/_Template.lua`.
 - Kjente fallgruver: mål aldri tekst før den har bredde (gi FontString eksplisitt `SetWidth`); gjør aldri aritmetikk på verdier som kan være hemmelige (`issecretvalue`); `PP.Point` med samme punktnavn erstatter ankeret.
 
 ## 1e. Spar bruk

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.13.0]
+- New page Quality of Life (one module, a switch per feature): hide talking head (voice still plays), hide error messages, hide zone text, sell junk, repair (guild bank first optional).
+- Retail only: quick sign-up in the group finder (hold Shift for the normal dialog) and accepting group invites (friends/guild only, or anyone).
+
 ## [0.12.0]
 - New module Interface > Minimap: show minimap buttons only on mouseover (addon buttons and/or Blizzard buttons). No OnUpdate; uses OnEnter/OnLeave hooks and alpha only.
 
