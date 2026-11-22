@@ -517,8 +517,16 @@ local function Build()
     W.VLine(content, T.border, true) -- divider between sidebar and content
     f.content = content
 
-    f:SetScript("OnShow", function() PlaySound(SOUNDKIT.IG_MAINMENU_OPEN) end)
-    f:SetScript("OnHide", function() PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE) end)
+    -- Not available in combat: the window closes when combat starts. The combat event is only
+    -- registered while the window is open.
+    f:SetScript("OnShow", function()
+        PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
+        ns:RegisterEvent("PLAYER_REGEN_DISABLED", Options, Options.OnCombatStart)
+    end)
+    f:SetScript("OnHide", function()
+        PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
+        ns:UnregisterEvent("PLAYER_REGEN_DISABLED", Options)
+    end)
 
     -- Close with Escape (native)
     tinsert(UISpecialFrames, "NitexUIOptionsFrame")
@@ -530,7 +538,18 @@ end
 ---------------------------------------------------------------------------
 -- Public API
 ---------------------------------------------------------------------------
+function Options:OnCombatStart()
+    if window and window:IsShown() then
+        window:Hide()
+        ns:Print(L["OPTIONS_CLOSED_COMBAT"])
+    end
+end
+
 function Options:Open(key)
+    if InCombatLockdown() then
+        ns:Print(L["OPTIONS_IN_COMBAT"])
+        return
+    end
     if not window then Build() end
     window:Show()
     window:Raise()

@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.16.3]
+- Options window is not available in combat: it closes when combat starts and cannot be opened until combat ends.
+
 ## [0.16.2]
 - Nameplates > Border: hides Blizzard's soft fill mask and the "not target" overlay while on, so the bar colour is even all the way to the border.
 
