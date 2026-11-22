@@ -102,7 +102,9 @@ end
 --- Width/height in UI units, rounded to whole physical pixels.
 function PP.Size(region, w, h)
     local d = Data(region)
-    d.w, d.h = w, h or w
+    h = h or w
+    if d.w == w and d.h == h then return end -- unchanged (scale changes go through Resnap)
+    d.w, d.h = w, h
     ApplySize(region, d)
 end
 

@@ -121,12 +121,15 @@ function F.CreateIcon(parent, size)
 end
 
 --- Places the first `n` icons of `row.icons` side by side and sizes the row to fit.
+--- Skipped when nothing changed (the rows refresh on every bag/aura update).
 function F.LayoutRow(row, n, size, gap)
     local icons = row.icons
+    if row.layoutN == n and row.layoutSize == size and row.layoutGap == gap and row.layoutCount == #icons then return end
+    row.layoutN, row.layoutSize, row.layoutGap, row.layoutCount = n, size, gap, #icons
     for i = 1, #icons do
         local b = icons[i]
         if i <= n then
-            PP.ClearPoints(b)
+            -- PP.Point with the same point name replaces the anchor: no ClearPoints needed.
             PP.Point(b, "TOPLEFT", row, "TOPLEFT", (i - 1) * (size + gap), 0)
             b:Show()
         else

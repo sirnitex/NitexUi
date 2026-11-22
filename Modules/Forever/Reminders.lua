@@ -11,7 +11,8 @@
 -- Known spells: C_SpellBook.IsSpellKnown with the spell IDs below (spells this character does
 -- not have are skipped). Buffs are matched by the localized spell name, so every rank counts.
 -- Nothing is read in combat; the row is hidden in combat, in the air, and while dead.
--- Events while ON: UNIT_AURA / UNIT_INVENTORY_CHANGED (player only, one check per 0.5 s),
+-- Events while ON: UNIT_AURA / UNIT_INVENTORY_CHANGED (player only, one check per 0.5 s,
+-- ignored in combat; PLAYER_REGEN_ENABLED checks again),
 -- PLAYER_REGEN_ENABLED/DISABLED, PLAYER_ENTERING_WORLD, SPELLS_CHANGED, PLAYER_LEVEL_UP,
 -- PLAYER_CONTROL_LOST/GAINED (taxi).
 --
@@ -95,9 +96,20 @@ local function FirstKnown(spells)
     end
 end
 
+-- Spell names never change during a session: looked up once per spell ID.
+local spellNames = {}
+local function SpellName(id)
+    local name = spellNames[id]
+    if name == nil then
+        name = GetSpellName(id) or false
+        spellNames[id] = name
+    end
+    return name or nil
+end
+
 local function HasAnyBuff(spells)
     for i = 1, #spells do
-        local name = GetSpellName(spells[i])
+        local name = SpellName(spells[i])
         if name and F.GetAura(name) then return true end
     end
     return false
@@ -186,8 +198,8 @@ local function Check()
     end
 
     if db.wellFed and UnitLevel("player") >= 10 then
-        local fed = GetSpellName(WELL_FED_SPELL) or L["AURA_WELL_FED"]
-        local food = GetSpellName(FOOD_SPELL) or L["AURA_FOOD"]
+        local fed = SpellName(WELL_FED_SPELL) or L["AURA_WELL_FED"]
+        local food = SpellName(FOOD_SPELL) or L["AURA_FOOD"]
         if not F.GetAura(fed) and not F.GetAura(food) then
             n = n + 1
             SetIcon(n, WELL_FED_ICON, nil, L["REMIND_WELLFED"])
@@ -204,7 +216,7 @@ local function Check()
 end
 
 local function Queue()
-    if pending then return end
+    if pending or InCombatLockdown() then return end -- hidden in combat; REGEN_ENABLED re-checks
     pending = true
     C_Timer.After(0.5, Check)
 end
@@ -248,5 +260,6 @@ function M:OnDisable()
     ns:UnregisterEvent("PLAYER_CONTROL_LOST", self)
     ns:UnregisterEvent("PLAYER_CONTROL_GAINED", self)
     entries = nil
+    wipe(spellNames)
     Hide()
 end

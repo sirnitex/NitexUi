@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.25.3]
+- Performance pass (no visible changes):
+  - Nameplates > Health Colors: threat and quest events are only registered while those colours are on. Quest log bursts cause one repaint instead of many; raid roster changes only repaint when you join or leave a group.
+  - Nameplates > Border: a target change only touches the old and the new target plate (was every plate on screen); layout and colour are skipped when unchanged.
+  - Interface > Minimap: one GetChildren() call per scan instead of one per child.
+  - Interface > Character Panel: UNIT_INVENTORY_CHANGED for the player only.
+  - Global Settings > Fonts: a burst of ADDON_LOADED events (login) runs one font pass.
+  - Forever > Reminders: aura changes in combat are ignored (the row is hidden there anyway); spell names are cached.
+  - Forever rows and pixel helpers: size and layout are not re-applied when nothing changed.
+
 ## [0.25.2]
 - Databars: width and height are typed in (whole numbers, Enter to apply, Esc to undo). Width 50 up to the full screen width, height 10 to 100. The bar is now exactly the width you set.
 

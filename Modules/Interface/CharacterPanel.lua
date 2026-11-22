@@ -244,8 +244,8 @@ function M:OnEquipmentChanged(_, slotID)
 end
 
 -- No slot in this event: only slots whose item link changed are redrawn.
-function M:OnInventoryChanged(_, unit)
-    if unit == "player" then UpdateAll(false) end
+function M:OnInventoryChanged()
+    UpdateAll(false)
 end
 
 -- Item data can arrive a moment after the window opens (first login, new item).
@@ -263,7 +263,7 @@ local function StartWatching()
     if watching then return end
     watching = true
     ns:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", M, M.OnEquipmentChanged)
-    ns:RegisterEvent("UNIT_INVENTORY_CHANGED", M, M.OnInventoryChanged)
+    ns:RegisterPlayerEvent("UNIT_INVENTORY_CHANGED", M, M.OnInventoryChanged) -- player only
     ns:RegisterEvent("GET_ITEM_INFO_RECEIVED", M, M.OnItemInfo)
 end
 
@@ -271,7 +271,7 @@ local function StopWatching()
     if not watching then return end
     watching = false
     ns:UnregisterEvent("PLAYER_EQUIPMENT_CHANGED", M)
-    ns:UnregisterEvent("UNIT_INVENTORY_CHANGED", M)
+    ns:UnregisterPlayerEvent("UNIT_INVENTORY_CHANGED", M)
     ns:UnregisterEvent("GET_ITEM_INFO_RECEIVED", M)
 end
 

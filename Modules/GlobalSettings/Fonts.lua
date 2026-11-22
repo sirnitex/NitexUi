@@ -136,12 +136,26 @@ function M:OnInitialize()
     end
 end
 
+-- ADDON_LOADED fires once per addon (dozens at login): GetFonts() builds a new list every
+-- call, so a burst of loads is merged into one Apply on the next frame.
+local applyPending = false
+local function DeferredApply()
+    applyPending = false
+    M:Apply()
+end
+
+function M:OnAddonLoaded()
+    if applyPending then return end
+    applyPending = true
+    C_Timer.After(0, DeferredApply)
+end
+
 function M:OnEnable()
     generation = generation + 1
     self:Apply()
     -- Blizzard load-on-demand UI (e.g. Blizzard_Collections) can add new font objects.
     -- Only objects we have not seen yet are touched (stamp check), so this is cheap.
-    ns:RegisterEvent("ADDON_LOADED", self, self.Apply)
+    ns:RegisterEvent("ADDON_LOADED", self, self.OnAddonLoaded)
 end
 
 function M:OnDisable()

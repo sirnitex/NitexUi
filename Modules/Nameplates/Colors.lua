@@ -21,8 +21,10 @@
 --   * Forbidden nameplates (friendly plates in instances) are never touched.
 --
 -- Cost while ON: a few API calls per nameplate when it appears, when its threat list
--- changes, or when your quests/role change. UNIT_FLAGS/UNIT_FACTION only while the Neutral
--- (or, on Forever, Tapped) colour is on. Nothing per frame.
+-- changes, or when your quests/role change. Events are only registered for colours that are
+-- on: UNIT_FLAGS/UNIT_FACTION for Neutral (or, on Forever, Tapped), UNIT_THREAT_LIST_UPDATE/
+-- GROUP_ROSTER_UPDATE for Threat, QUEST_LOG_UPDATE for Quest (bursts merged, 0.2 s).
+-- GROUP_ROSTER_UPDATE only repaints when you join or leave a group. Nothing per frame.
 -- When OFF: no events. Hooks cannot be removed in WoW, so a bar hooked earlier this session
 -- returns immediately on its first line until you /reload.
 
@@ -30,12 +32,12 @@ local _, ns = ...
 local M = ns:NewModule("NameplateColors")
 ns.NameplateColors = M
 
-local next, unpack = next, unpack
+local next = next
 local UnitThreatSituation, UnitClassification, UnitCanAttack, UnitIsPlayer =
       UnitThreatSituation, UnitClassification, UnitCanAttack, UnitIsPlayer
 local issecretvalue = issecretvalue or function() return false end
 local UnitIsRelatedToActiveQuest = C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest
-local UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied = UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied
+local UnitIsQuestBoss, UnitIsTapDenied, IsInGroup = UnitIsQuestBoss, UnitIsTapDenied, IsInGroup
 local UnitIsLieutenant, UnitEffectiveLevel, UnitHasPowerType = UnitIsLieutenant, UnitEffectiveLevel or UnitLevel, UnitHasPowerType
 local MANA = Enum and Enum.PowerType and Enum.PowerType.Mana
 local UnitReaction, UnitIsEnemy, UnitAffectingCombat = UnitReaction, UnitIsEnemy, UnitAffectingCombat
@@ -92,6 +94,7 @@ end
 -- Player role (cached; refreshed only when the role can change)
 ---------------------------------------------------------------------------
 local isTank = false
+local inGroup = false -- cached; changes only on GROUP_ROSTER_UPDATE
 
 local function UpdateRole()
     local role = UnitGroupRolesAssigned and UnitGroupRolesAssigned("player")
@@ -173,7 +176,7 @@ local function Compute(unit)
 
     -- 1. Threat
     local t = db.threat
-    if t.enabled and (not t.groupOnly or IsInGroup()) then
+    if t.enabled and (not t.groupOnly or inGroup) then
         local status = UnitThreatSituation("player", unit)
         if status ~= nil and not issecretvalue(status) then
             local c = ThreatColor(status)
@@ -303,42 +306,64 @@ function M:NAME_PLATE_UNIT_REMOVED(_, unit) Detach(unit) end
 function M:UNIT_THREAT_LIST_UPDATE(_, unit) if active[unit] then Update(unit) end end
 function M:UNIT_CLASSIFICATION_CHANGED(_, unit) if active[unit] then Update(unit) end end
 function M:UnitChanged(_, unit) if active[unit] then Update(unit) end end
-function M:QUEST_LOG_UPDATE() UpdateAll() end
-function M:GROUP_ROSTER_UPDATE() UpdateAll() end
+-- QUEST_LOG_UPDATE comes in bursts (several per quest objective): one repaint per burst.
+local questPending = false
+local function QuestRepaint()
+    questPending = false
+    if M.enabled then UpdateAll() end
+end
+function M:QUEST_LOG_UPDATE()
+    if questPending then return end
+    questPending = true
+    C_Timer.After(0.2, QuestRepaint)
+end
+
+-- Fires for every roster change in a raid; only joining/leaving a group changes our colours.
+function M:GROUP_ROSTER_UPDATE()
+    local g = IsInGroup()
+    if g == inGroup then return end
+    inGroup = g
+    UpdateAll()
+end
 function M:RoleChanged() UpdateRole(); UpdateAll() end
 
 local EVENTS = {
     NAME_PLATE_UNIT_ADDED = "NAME_PLATE_UNIT_ADDED",
     NAME_PLATE_UNIT_REMOVED = "NAME_PLATE_UNIT_REMOVED",
-    UNIT_THREAT_LIST_UPDATE = "UNIT_THREAT_LIST_UPDATE",
     UNIT_CLASSIFICATION_CHANGED = "UNIT_CLASSIFICATION_CHANGED",
-    QUEST_LOG_UPDATE = "QUEST_LOG_UPDATE",
-    GROUP_ROSTER_UPDATE = "GROUP_ROSTER_UPDATE",
     PLAYER_ROLES_ASSIGNED = "RoleChanged",
     PLAYER_SPECIALIZATION_CHANGED = "RoleChanged",
 }
 
--- Faction/flags fire often, so they are only watched when a colour needs them:
--- Neutral (a neutral mob entering combat) or, on Forever, Tapped (a mob turning grey).
-local flagEvents = false
+-- Events only a colour that is on needs. `on` = registered now.
+--   flags:  Neutral (a neutral mob entering combat) or, on Forever, Tapped (a mob turning grey)
+--   threat: threat colours;  quest: quest mob colour
+local OPTIONAL = {
+    { on = false, events = { UNIT_FACTION = "UnitChanged", UNIT_FLAGS = "UnitChanged" },
+      want = function() return (db.types.neutral and db.types.neutral.enabled) or (ns.isForever and db.tapped.enabled) end },
+    { on = false, events = { UNIT_THREAT_LIST_UPDATE = "UNIT_THREAT_LIST_UPDATE", GROUP_ROSTER_UPDATE = "GROUP_ROSTER_UPDATE" },
+      want = function() return db.threat.enabled end },
+    { on = false, events = { QUEST_LOG_UPDATE = "QUEST_LOG_UPDATE" },
+      want = function() return db.quest.enabled end },
+}
 
-local function RefreshFlagEvents()
-    local want = M.enabled and db and ((db.types.neutral and db.types.neutral.enabled)
-        or (ns.isForever and db.tapped.enabled)) or false
-    if want == flagEvents then return end
-    flagEvents = want
-    if want then
-        ns:RegisterEvent("UNIT_FACTION", M, M.UnitChanged)
-        ns:RegisterEvent("UNIT_FLAGS", M, M.UnitChanged)
-    else
-        ns:UnregisterEvent("UNIT_FACTION", M)
-        ns:UnregisterEvent("UNIT_FLAGS", M)
+local function RefreshOptionalEvents()
+    inGroup = IsInGroup() -- GROUP_ROSTER_UPDATE is not watched while threat is off
+    for i = 1, #OPTIONAL do
+        local o = OPTIONAL[i]
+        local want = (M.enabled and db and o.want()) and true or false
+        if want ~= o.on then
+            o.on = want
+            for event, method in next, o.events do
+                if want then ns:RegisterEvent(event, M, M[method]) else ns:UnregisterEvent(event, M) end
+            end
+        end
     end
 end
 
---- Used by the options after any colour change: re-paints and adds/removes flag events.
+--- Used by the options after any colour change: re-paints and adds/removes optional events.
 function M.UpdateAll(force)
-    RefreshFlagEvents()
+    RefreshOptionalEvents()
     UpdateAll(force)
 end
 
@@ -348,7 +373,7 @@ function M:OnEnable()
     for event, method in next, EVENTS do
         ns:RegisterEvent(event, self, self[method])
     end
-    RefreshFlagEvents()
+    RefreshOptionalEvents()
     -- Nameplates that are already on screen.
     local plates = C_NamePlate.GetNamePlates()
     for i = 1, #plates do
@@ -362,7 +387,7 @@ function M:OnDisable()
     for event in next, EVENTS do
         ns:UnregisterEvent(event, self)
     end
-    RefreshFlagEvents() -- self.enabled is false here: removes them
+    RefreshOptionalEvents() -- self.enabled is false here: removes them
     for unit in next, active do Detach(unit) end
     wipe(active)
     wipe(state) -- hooks left from this session now return on their first check

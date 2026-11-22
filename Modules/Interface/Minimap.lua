@@ -94,15 +94,20 @@ local function IsAddonButton(f)
     return true
 end
 
+-- One GetChildren() call per scan (calling it once per child was O(n^2) C calls).
+local function ScanList(...)
+    for i = 1, select("#", ...) do
+        local f = select(i, ...)
+        if f and not managed[f] and IsAddonButton(f) then Manage(f) end
+    end
+end
+
 function ScanAddonButtons()
     if not ns.db.interface.minimap.includeAddons then return end
     local n = Minimap:GetNumChildren()
     if n == lastChildCount then return end
     lastChildCount = n
-    for i = 1, n do
-        local f = select(i, Minimap:GetChildren())
-        if f and not managed[f] and IsAddonButton(f) then Manage(f) end
-    end
+    ScanList(Minimap:GetChildren())
 end
 
 --- Bring everything in line with the current settings.

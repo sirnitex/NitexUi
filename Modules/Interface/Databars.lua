@@ -46,9 +46,10 @@ local TICK = 1
 
 -- Size limits (UI units). Max width = the screen width (UIParent), checked on every Apply.
 M.MIN_WIDTH, M.MIN_HEIGHT, M.MAX_HEIGHT = 50, 10, 100
-function M:MaxWidth() return floor(UIParent:GetWidth()) end
 
-local floor, max, time = math.floor, math.max, time
+local floor, max, min, time = math.floor, math.max, math.min, time
+
+function M:MaxWidth() return floor(UIParent:GetWidth()) end
 local GetFramerate, GetNetStats, GetMoney = GetFramerate, GetNetStats, GetMoney
 local GetInventoryItemDurability = GetInventoryItemDurability
 local GetAverageItemLevel = GetAverageItemLevel
@@ -382,8 +383,8 @@ function M:Apply()
     if count == 0 then bar:Hide(); return end
 
     -- Exact width: equal slots, the first `extra` slots get one more unit.
-    local barW = max(self.MIN_WIDTH, math.min(db.width, self:MaxWidth()))
-    local barH = max(self.MIN_HEIGHT, math.min(db.height, self.MAX_HEIGHT))
+    local barW = max(self.MIN_WIDTH, min(db.width, self:MaxWidth()))
+    local barH = max(self.MIN_HEIGHT, min(db.height, self.MAX_HEIGHT))
     local slotW = floor(barW / count)
     local extra = barW - slotW * count
     PP.Size(bar, barW, barH)

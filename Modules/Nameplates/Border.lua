@@ -43,6 +43,7 @@ ns.defaults.nameplates.border = {
 local db
 local skins = setmetatable({}, { __mode = "k" }) -- [HealthBarsContainer] = skin data
 local active = {}                                -- [unitToken] = skin data
+local targetSkin                                 -- skin on your target's plate (if any)
 
 ---------------------------------------------------------------------------
 -- Skin
@@ -77,6 +78,8 @@ end
 local function Layout(s)
     local c = s.bar
     local px = GetPixelToUIUnitFactor() / c:GetEffectiveScale()
+    if px == s.px then return end -- same scale as last time: anchors are still right
+    s.px = px
     local top, bottom, left, right = s.top, s.bottom, s.left, s.right
     top:ClearAllPoints()
     top:SetPoint("BOTTOMLEFT", c, "TOPLEFT", -px, 0)
@@ -99,6 +102,8 @@ end
 local function Colour(s, unit)
     local col = db.color
     if db.target.enabled and unit and UnitIsUnit(unit, "target") then col = db.target.color end
+    if col == s.col then return end -- already this colour (Refresh clears s.col)
+    s.col = col
     local r, g, b = col[1], col[2], col[3]
     s.top:SetColorTexture(r, g, b, 1)
     s.bottom:SetColorTexture(r, g, b, 1)
@@ -155,12 +160,16 @@ local function Attach(unit)
     Colour(s, unit)
     ShowSkin(s, true)
     active[unit] = s
+    s.unit = unit
+    if UnitIsUnit(unit, "target") then targetSkin = s end
 end
 
 local function Detach(unit)
     local s = active[unit]
     if not s then return end
     active[unit] = nil
+    s.unit = nil
+    if targetSkin == s then targetSkin = nil end
     ShowSkin(s, false)
 end
 
@@ -168,10 +177,20 @@ function M:NAME_PLATE_UNIT_ADDED(_, unit)   Attach(unit) end
 function M:NAME_PLATE_UNIT_REMOVED(_, unit) Detach(unit) end
 
 -- The target's plate grows (selected scale): re-measure the pixel and recolour.
+-- Only the old and the new target plate change, so only those two are touched.
 function M:PLAYER_TARGET_CHANGED()
-    for unit, s in next, active do
+    local old = targetSkin
+    local c = GetContainer(C_NamePlate.GetNamePlateForUnit("target"))
+    local s = c and skins[c]
+    if s and not s.unit then s = nil end -- skin not on screen
+    targetSkin = s
+    if old and old ~= s and old.unit then
+        Layout(old)
+        Colour(old, old.unit)
+    end
+    if s then
         Layout(s)
-        Colour(s, unit)
+        Colour(s, s.unit)
     end
 end
 
@@ -180,6 +199,7 @@ function M:Refresh()
     if not self.enabled then return end
     for unit, s in next, active do
         s.bg:SetColorTexture(0, 0, 0, db.background)
+        s.col = nil -- colour tables are edited in place by the options
         Colour(s, unit)
     end
 end
@@ -201,4 +221,5 @@ function M:OnDisable()
     for i = 1, #EVENTS do ns:UnregisterEvent(EVENTS[i], self) end
     for unit in next, active do Detach(unit) end
     wipe(active)
+    targetSkin = nil
 end
