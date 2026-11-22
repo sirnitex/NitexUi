@@ -97,3 +97,12 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 
 ## 6. Varsle før noe FPS-tungt
 - **Hvis eieren ber om noe som krever egen matte, hyppige oppdateringer, OnUpdate, mange frames eller annet som kan koste FPS: si fra FØR det bygges.** Forklar kostnaden kort, og foreslå et lettere alternativ hvis det finnes. Vent på svar før du implementerer.
+
+## 7. Åpne oppgaver (start her neste økt)
+1. **Expressway-font i innstillingsvinduet virker ikke** (0.17.2). Filen ligger i `Media/Fonts/Expressway.ttf` (99 820 byte, hentet fra `tukui-org/ElvUI` `ElvUI/Game/Shared/Media/Fonts/`), og `Options/Widgets.lua` setter `FONT` til den med fallback til `GameFontHighlight:GetFont()`. Sjekk i rekkefølge: (a) har eieren startet spillet helt på nytt (nye fontfiler lastes ikke ved /reload)? (b) Overstyrer `Modules/GlobalSettings/Fonts.lua` fontene etterpå? (c) Brukes `W.FontX`-objektene faktisk av alle widgets, eller settes font direkte andre steder (f.eks. `SetFont` i dropdown med `fontFor`)? (d) Lag en `/nitex font`-test som skriver ut `W.FontNormal:GetFont()`.
+2. **Grundig kodegjennomgang** av alt som ble laget 21.–22. nov (eieren ba om det). Kjente forbedringer:
+   - `Modules/Nameplates/Colors.lua`: `UNIT_FLAGS`/`UNIT_FACTION` registreres alltid; begrens til når nøytral-fargen er på (eller Forever/tapped).
+   - `Modules/QualityOfLife.lua` og `Modules/UnitFrames.lua`: venter på `PLAYER_REGEN_ENABLED` også for endringer som bare er alpha/sonetekst; bare reparenting av beskyttede rammer (TotemFrame/class resources) trenger å vente.
+   - `Modules/Interface/CharacterPanel.lua`: `UNIT_INVENTORY_CHANGED` oppdaterer alle slots; vurder kun berørte slots.
+   - Generelt: sjekk at alle moduler med AV ikke har events (`/nitex status`), og at varme stier ikke lager tabeller/closures.
+3. Ikke testet i spillet ennå: Unit Frames (spesielt focus-auraer i kamp og class resources), Quality of Life (rask påmelding, talking head), Nameplates Border etter siste maske-fix.
