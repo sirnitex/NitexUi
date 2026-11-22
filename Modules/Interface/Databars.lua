@@ -44,6 +44,10 @@ ns.defaults.interface.databars = {
 
 local TICK = 1
 
+-- Size limits (UI units). Max width = the screen width (UIParent), checked on every Apply.
+M.MIN_WIDTH, M.MIN_HEIGHT, M.MAX_HEIGHT = 50, 10, 100
+function M:MaxWidth() return floor(UIParent:GetWidth()) end
+
 local floor, max, time = math.floor, math.max, time
 local GetFramerate, GetNetStats, GetMoney = GetFramerate, GetNetStats, GetMoney
 local GetInventoryItemDurability = GetInventoryItemDurability
@@ -377,20 +381,25 @@ function M:Apply()
     end
     if count == 0 then bar:Hide(); return end
 
-    local slotW, barH = floor(db.width / count), db.height
-    PP.Size(bar, slotW * count, barH)
+    -- Exact width: equal slots, the first `extra` slots get one more unit.
+    local barW = max(self.MIN_WIDTH, math.min(db.width, self:MaxWidth()))
+    local barH = max(self.MIN_HEIGHT, math.min(db.height, self.MAX_HEIGHT))
+    local slotW = floor(barW / count)
+    local extra = barW - slotW * count
+    PP.Size(bar, barW, barH)
     local fontFile, _, fontFlags = GameFontHighlightSmall:GetFont()
 
-    local n = 0
+    local n, x = 0, 0
     for i = 1, #ORDER do
         local key = ORDER[i]
         local slot = slots[key]
         if db[key] then
             shown[key] = true
-            PP.Size(slot, slotW, barH)
+            local w = n < extra and slotW + 1 or slotW
+            PP.Size(slot, w, barH)
             if fontFile then slot.text:SetFont(fontFile, db.fontSize, fontFlags or "") end
-            PP.Point(slot, "TOPLEFT", bar, "TOPLEFT", n * slotW, 0)
-            n = n + 1
+            PP.Point(slot, "TOPLEFT", bar, "TOPLEFT", x, 0)
+            n, x = n + 1, x + w
             slot:Show()
             local e = EVENTS[key]
             if e then ns:RegisterEvent(e[1], self, e[2]) end

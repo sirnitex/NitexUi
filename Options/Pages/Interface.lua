@@ -110,16 +110,31 @@ end
 ---------------------------------------------------------------------------
 -- Sub-tab: Databars
 ---------------------------------------------------------------------------
-local DB_WIDTHS = {
-    { value = 300, text = "300" }, { value = 400, text = "400" }, { value = 500, text = "500" },
-    { value = 600, text = "600" }, { value = 800, text = "800" }, { value = 1000, text = "1000" },
-}
+-- Number box: type a whole number, Enter (or leaving the box) applies it, clamped to min..max.
+local function NumberBox(p, label, getter, setter, minV, maxV)
+    local f = W.EditBox(p, label, 160)
+    local box = f.box
+    box:SetNumeric(true)
+    box:SetMaxLetters(5)
+    local function Show() box:SetText(tostring(getter())) end
+    local function Commit()
+        local v = tonumber(box:GetText())
+        if v then
+            local hi = type(maxV) == "function" and maxV() or maxV
+            v = math.floor(v)
+            if v < minV then v = minV elseif v > hi then v = hi end
+            if v ~= getter() then setter(v) end
+        end
+        Show()
+    end
+    box:HookScript("OnEnterPressed", Commit)
+    box:HookScript("OnEditFocusLost", Commit)
+    box:SetScript("OnEscapePressed", function(self) Show(); self:ClearFocus() end) -- Esc = undo
+    f.Refresh = Show
+    Show()
+    return f
+end
 
-local DB_HEIGHTS = {
-    { value = 18, text = "18" }, { value = 20, text = "20" }, { value = 22, text = "22" },
-    { value = 24, text = "24" }, { value = 26, text = "26" }, { value = 28, text = "28" },
-    { value = 32, text = "32" },
-}
 local DB_FONTSIZES = {
     { value = 9, text = "9" }, { value = 10, text = "10" }, { value = 11, text = "11" },
     { value = 12, text = "12" }, { value = 13, text = "13" }, { value = 14, text = "14" },
@@ -147,12 +162,14 @@ local function BuildDatabars(parent)
     end
 
     p:Add(W.Header(p, L["SECTION_DB_LAYOUT"]), 16)
-    p:Add(W.Dropdown(p, L["OPT_DB_WIDTH"], 160, DB_WIDTHS,
+    p:Add(NumberBox(p, L["OPT_DB_WIDTH"]:format(M:MaxWidth()),
         function() return db.width end,
-        function(v) db.width = v; M:Apply() end), 10)
-    p:Add(W.Dropdown(p, L["OPT_DB_HEIGHT"], 160, DB_HEIGHTS,
+        function(v) db.width = v; M:Apply() end,
+        M.MIN_WIDTH, function() return M:MaxWidth() end), 10)
+    p:Add(NumberBox(p, L["OPT_DB_HEIGHT"]:format(M.MAX_HEIGHT),
         function() return db.height end,
-        function(v) db.height = v; M:Apply() end), 10)
+        function(v) db.height = v; M:Apply() end,
+        M.MIN_HEIGHT, M.MAX_HEIGHT), 10)
     p:Add(W.Dropdown(p, L["OPT_DB_FONTSIZE"], 160, DB_FONTSIZES,
         function() return db.fontSize end,
         function(v) db.fontSize = v; M:Apply() end), 10)

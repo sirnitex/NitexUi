@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.25.2]
+- Databars: width and height are typed in (whole numbers, Enter to apply, Esc to undo). Width 50 up to the full screen width, height 10 to 100. The bar is now exactly the width you set.
+
 ## [0.25.1]
 - Forever: Flight Timer removed (other addons such as InFlight already ship flight times).
 
