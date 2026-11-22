@@ -538,8 +538,25 @@ end
 ---------------------------------------------------------------------------
 -- Public API
 ---------------------------------------------------------------------------
+-- Reopen after combat if the window was open when combat started, or if someone tried to
+-- open it during combat. PLAYER_REGEN_ENABLED is registered only while a reopen is pending.
+local reopenKey
+
+local function QueueReopen(key)
+    reopenKey = key or (window and window.current) or "general"
+    ns:RegisterEvent("PLAYER_REGEN_ENABLED", Options, Options.OnCombatEnd)
+end
+
+function Options:OnCombatEnd()
+    ns:UnregisterEvent("PLAYER_REGEN_ENABLED", self)
+    local key = reopenKey
+    reopenKey = nil
+    if key then self:Open(key) end
+end
+
 function Options:OnCombatStart()
     if window and window:IsShown() then
+        QueueReopen(window.current)
         window:Hide()
         ns:Print(L["OPTIONS_CLOSED_COMBAT"])
     end
@@ -547,7 +564,8 @@ end
 
 function Options:Open(key)
     if InCombatLockdown() then
-        ns:Print(L["OPTIONS_IN_COMBAT"])
+        if not reopenKey then ns:Print(L["OPTIONS_IN_COMBAT"]) end
+        QueueReopen(key)
         return
     end
     if not window then Build() end
@@ -559,6 +577,10 @@ end
 function Options:Toggle()
     if window and window:IsShown() then
         window:Hide()
+    elseif reopenKey and InCombatLockdown() then
+        -- Toggled again while waiting: cancel the pending reopen.
+        reopenKey = nil
+        ns:UnregisterEvent("PLAYER_REGEN_ENABLED", self)
     else
         self:Open()
     end
