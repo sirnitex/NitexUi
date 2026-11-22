@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.15.0]
+- Nameplates > Health Colors: enemy types replaced by Classification Colors: Worldboss, Elite Boss, Elite Mini (UnitIsLieutenant), Rare Elite, Rare, Caster (Paladin-class NPCs). Old type colours in saved profiles are replaced once with the new defaults.
+
 ## [0.14.0]
 - New module Interface > Character Panel: item level (quality coloured), enchant name and gem icons (empty sockets marked) next to every equipped item on Blizzard's character window. Retail and Forever.
 

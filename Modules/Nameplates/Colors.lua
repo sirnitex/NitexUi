@@ -1,7 +1,7 @@
 -- NitexUI: Nameplates > Health Colors
 --
 -- Recolours the health bar of Blizzard's OWN enemy nameplates. No custom nameplates.
--- Priority: Tapped (Forever only) > Threat > Quest mob > Enemy type.
+-- Priority: Tapped (Forever only) > Threat > Quest mob > Classification.
 -- If nothing applies, Blizzard's colour stays.
 --
 -- APIs (all native, all secret-checked):
@@ -9,7 +9,9 @@
 --   UnitThreatSituation("player", unit)        threat status 0-3 (type only, never the raw value)
 --   C_QuestLog.UnitIsRelatedToActiveQuest(unit) quest mob
 --   UnitIsQuestBoss(unit)                       quest kill target
---   UnitClassification(unit), UnitIsBossMob()   enemy type
+--   UnitClassification(unit), UnitIsBossMob(),  classification:
+--   UnitIsLieutenant(unit) (12.0+), UnitClassBase  worldboss / elite boss / elite mini /
+--                                               rare elite / rare / caster ("Paladin" NPCs)
 --
 -- Taint-safe design:
 --   * All API calls happen in OUR event handler. The colour is cached per health bar.
@@ -33,6 +35,7 @@ local UnitThreatSituation, UnitClassification, UnitCanAttack, UnitIsPlayer =
 local issecretvalue = issecretvalue or function() return false end
 local UnitIsRelatedToActiveQuest = C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest
 local UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied = UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied
+local UnitIsLieutenant, UnitClassBase, UnitLevel = UnitIsLieutenant, UnitClassBase, UnitLevel
 
 ---------------------------------------------------------------------------
 -- Defaults
@@ -50,29 +53,30 @@ ns.defaults.nameplates.colors = {
         danger  = { enabled = true, color = C(0.95, 0.15, 0.15) }, -- tank: you lost aggro.   others: you have aggro
     },
     quest = { enabled = true, color = C(0.35, 0.75, 1.00) },
-    types = {
-        boss      = { enabled = true,  color = C(0.65, 0.25, 0.95) },
-        rareelite = { enabled = true,  color = C(1.00, 0.82, 0.20) },
-        elite     = { enabled = true,  color = C(0.95, 0.50, 0.20) },
-        rare      = { enabled = true,  color = C(0.80, 0.80, 0.90) },
-        normal    = { enabled = false, color = C(0.75, 0.20, 0.20) },
-        trivial   = { enabled = false, color = C(0.55, 0.55, 0.55) },
+    typesVersion = 2,
+    types = { -- Classification colours
+        worldboss = { enabled = true, color = C(0.82, 0.70, 0.05) },
+        eliteboss = { enabled = true, color = C(0.85, 0.30, 0.65) },
+        elitemini = { enabled = true, color = C(0.45, 0.30, 0.80) },
+        rareelite = { enabled = true, color = C(0.00, 0.75, 0.60) },
+        rare      = { enabled = true, color = C(0.30, 0.75, 0.00) },
+        caster    = { enabled = true, color = C(0.00, 0.50, 0.80) },
     },
 }
 
--- Order + labels used by the options page.
-M.typeOrder = { "boss", "rareelite", "elite", "rare", "normal", "trivial" }
+-- Order + labels used by the options page (also the priority, first wins).
+M.typeOrder = { "worldboss", "eliteboss", "elitemini", "rareelite", "rare", "caster" }
 M.threatOrder = { "good", "warning", "danger" }
 
-local classificationToType = {
-    worldboss = "boss",
-    rareelite = "rareelite",
-    elite     = "elite",
-    rare      = "rare",
-    normal    = "normal",
-    trivial   = "trivial",
-    minus     = "trivial",
-}
+-- Profiles saved before 0.15 had other enemy types (boss/elite/normal/trivial):
+-- replace them once with the new classification set.
+function M:OnInitialize()
+    local c = ns.db.nameplates and ns.db.nameplates.colors
+    if c and c.typesVersion ~= 2 then
+        c.types = CopyTable(ns.defaults.nameplates.colors.types)
+        c.typesVersion = 2
+    end
+end
 
 ---------------------------------------------------------------------------
 -- Player role (cached; refreshed only when the role can change)
@@ -109,6 +113,36 @@ local function ThreatColor(status)
     return entry and entry.enabled and entry.color or nil
 end
 
+local function Known(v) return v ~= nil and not issecretvalue(v) end
+
+local function Classify(unit)
+    local cls = UnitClassification(unit)
+    if not Known(cls) then cls = nil end
+    if cls == "worldboss" then return "worldboss" end
+
+    local boss = UnitIsBossMob and UnitIsBossMob(unit)
+    if Known(boss) and boss then return "eliteboss" end
+
+    local mini
+    if UnitIsLieutenant then
+        mini = UnitIsLieutenant(unit)
+        mini = Known(mini) and mini
+    elseif cls == "elite" then
+        -- Client without UnitIsLieutenant: an elite above your level is a mini-boss.
+        local lvl, my = UnitLevel(unit), UnitLevel("player")
+        mini = Known(lvl) and Known(my) and lvl > my
+    end
+    if mini then return "elitemini" end
+
+    if cls == "rareelite" then return "rareelite" end
+    if cls == "rare" then return "rare" end
+
+    -- Blizzard marks caster NPCs with the Paladin class.
+    local class = UnitClassBase and UnitClassBase(unit)
+    if Known(class) and class == "PALADIN" then return "caster" end
+    return nil
+end
+
 local function Compute(unit)
     local attackable = UnitCanAttack("player", unit)
     if issecretvalue(attackable) or not attackable then return nil end
@@ -139,15 +173,8 @@ local function Compute(unit)
         if not issecretvalue(q) and q then return db.quest.color end
     end
 
-    -- 3. Enemy type
-    local key
-    local boss = UnitIsBossMob and UnitIsBossMob(unit)
-    if not issecretvalue(boss) and boss then
-        key = "boss"
-    else
-        local cls = UnitClassification(unit)
-        if not issecretvalue(cls) then key = classificationToType[cls] end
-    end
+    -- 3. Classification (priority = M.typeOrder)
+    local key = Classify(unit)
     local entry = key and db.types[key]
     return entry and entry.enabled and entry.color or nil
 end
