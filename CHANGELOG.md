@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.15.2]
+- Classification Colors: new Neutral colour for neutral mobs out of combat (once they fight they use the enemy colours). UNIT_FLAGS/UNIT_FACTION now also watched on Retail so the colour switches when a neutral mob enters combat.
+
 ## [0.15.1]
 - Classification Colors reworked (same idea as EllesmereUI): caster = mob with a mana pool; Elite Boss / Elite Mini by effective level vs. yours (skull or +2 = boss, lieutenant or +1 = mini-boss). New Enemy and Mini Enemy colours so ordinary mobs are coloured again. Saved type colours are reset once.
 

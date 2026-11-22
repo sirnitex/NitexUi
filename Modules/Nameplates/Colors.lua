@@ -1,7 +1,7 @@
 -- NitexUI: Nameplates > Health Colors
 --
 -- Recolours the health bar of Blizzard's OWN enemy nameplates. No custom nameplates.
--- Priority: Tapped (Forever only) > Threat > Quest mob > Classification.
+-- Priority: Tapped (Forever only) > Threat > Quest mob > Neutral (out of combat) > Classification.
 -- If nothing applies, Blizzard's colour stays.
 --
 -- APIs (all native, all secret-checked):
@@ -37,6 +37,7 @@ local UnitIsRelatedToActiveQuest = C_QuestLog and C_QuestLog.UnitIsRelatedToActi
 local UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied = UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied
 local UnitIsLieutenant, UnitEffectiveLevel, UnitHasPowerType = UnitIsLieutenant, UnitEffectiveLevel or UnitLevel, UnitHasPowerType
 local MANA = Enum and Enum.PowerType and Enum.PowerType.Mana
+local UnitReaction, UnitIsEnemy, UnitAffectingCombat = UnitReaction, UnitIsEnemy, UnitAffectingCombat
 
 ---------------------------------------------------------------------------
 -- Defaults
@@ -64,11 +65,14 @@ ns.defaults.nameplates.colors = {
         caster    = { enabled = true, color = C(0.00, 0.50, 0.80) },
         enemy     = { enabled = true, color = C(0.80, 0.14, 0.14) }, -- elites without a tier
         minienemy = { enabled = true, color = C(0.80, 0.14, 0.14) }, -- non-elite trash
+        neutral   = { enabled = true, color = C(0.81, 0.72, 0.19) }, -- neutral, out of combat
     },
 }
 
 -- Order + labels used by the options page (also the priority, first wins).
-M.typeOrder = { "worldboss", "eliteboss", "elitemini", "rareelite", "rare", "caster", "enemy", "minienemy" }
+-- Neutral is listed last but checked first: a neutral mob out of combat gets it; once it
+-- fights it uses the colours above like any enemy.
+M.typeOrder = { "worldboss", "eliteboss", "elitemini", "rareelite", "rare", "caster", "enemy", "minienemy", "neutral" }
 M.threatOrder = { "good", "warning", "danger" }
 
 -- Profiles saved before 0.15.1 had other enemy types: replace them once with the new set.
@@ -182,7 +186,22 @@ local function Compute(unit)
         if not issecretvalue(q) and q then return db.quest.color end
     end
 
-    -- 3. Classification (priority = M.typeOrder)
+    -- 3. Neutral mob, out of combat (reaction 4, or attackable without being hostile)
+    local n = db.types.neutral
+    if n and n.enabled then
+        local reaction = UnitReaction(unit, "player")
+        local neutral = Known(reaction) and reaction == 4
+        if not neutral then
+            local enemy = UnitIsEnemy(unit, "player")
+            neutral = Known(enemy) and not enemy
+        end
+        if neutral then
+            local fighting = UnitAffectingCombat(unit)
+            if Known(fighting) and not fighting then return n.color end
+        end
+    end
+
+    -- 4. Classification (priority = M.typeOrder)
     local key = Classify(unit)
     local entry = key and db.types[key]
     return entry and entry.enabled and entry.color or nil
@@ -297,11 +316,9 @@ local EVENTS = {
     PLAYER_SPECIALIZATION_CHANGED = "RoleChanged",
 }
 
--- Forever: a mob turning grey (tagged by someone else) is signalled through its faction/flags.
-if ns.isForever then
-    EVENTS.UNIT_FACTION = "UnitChanged"
-    EVENTS.UNIT_FLAGS = "UnitChanged"
-end
+-- Faction/flags: a neutral mob entering combat, and (Forever) a mob turning grey when tagged.
+EVENTS.UNIT_FACTION = "UnitChanged"
+EVENTS.UNIT_FLAGS = "UnitChanged"
 
 function M:OnEnable()
     db = ns.db.nameplates.colors
