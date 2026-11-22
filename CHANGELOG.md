@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.21.0]
+- Interface > General: while the micro menu is hidden, the queue status eye can be moved with Shift + drag. The spot is saved per profile; new "Reset eye position" button.
+
 ## [0.20.0]
 - New Interface > Tooltip (module, off by default): hide the health bar under unit tooltips, and class-coloured player names.
 

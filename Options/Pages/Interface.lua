@@ -21,6 +21,10 @@ local function BuildGeneral(parent)
     p:Add(W.Toggle(p, L["OPT_HIDE_MICROMENU"], L["OPT_HIDE_MICROMENU_DESC"],
         function() return db.hideMicroMenu end,
         function(v) db.hideMicroMenu = v; M:Apply() end), 6)
+    p:Add(W.Toggle(p, L["OPT_MOVE_QUEUEEYE"], L["OPT_MOVE_QUEUEEYE_DESC"],
+        function() return db.moveQueueEye end,
+        function(v) db.moveQueueEye = v; M:Apply() end), 6)
+    p:Add(W.Button(p, L["OPT_RESET_QUEUEEYE"], 160, function() M:ResetQueueEye() end), 8)
 
     p:Add(W.Paragraph(p, L["IFGENERAL_NOTE"]), 16)
     return p
