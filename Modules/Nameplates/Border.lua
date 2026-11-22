@@ -14,6 +14,8 @@
 --
 --   * The bar's fill texture is swapped for a flat one while ON (Blizzard's fill has rounded
 --     corners, which leave gaps against a square border). The original is put back when OFF.
+--   * The fill's soft mask and the "not target" overlay are hidden while ON (they made the
+--     bar look lighter towards the edges).
 --   * Lines are anchored to the health bar itself, so the fill meets the border exactly.
 --
 -- Retail only. Events (only while ON): NAME_PLATE_UNIT_ADDED, NAME_PLATE_UNIT_REMOVED, PLAYER_TARGET_CHANGED.
@@ -104,12 +106,18 @@ local function Colour(s, unit)
     s.right:SetColorTexture(r, g, b, 1)
 end
 
+-- Blizzard art that clashes with a square 1px border:
+--   bgTexture / selectedBorder / container.border: the default frame and target highlight
+--   MaskTexture: soft rounded mask on the fill (made the edges look lighter)
+--   deselectedOverlay: shading drawn over plates that are not your target
 local function SetBlizzard(s, shown)
     local a = shown and 1 or 0
     local bar = s.bar
     if bar.bgTexture then bar.bgTexture:SetAlpha(a) end
     if bar.selectedBorder then bar.selectedBorder:SetAlpha(a) end
+    if bar.deselectedOverlay then bar.deselectedOverlay:SetAlpha(a) end
     if s.container.border then s.container.border:SetAlpha(a) end
+    if bar.MaskTexture then bar.MaskTexture:SetShown(shown) end
 end
 
 -- Flat fill while ON; Blizzard's own fill (atlas or file) restored when OFF.

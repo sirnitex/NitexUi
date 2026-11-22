@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.16.2]
+- Nameplates > Border: hides Blizzard's soft fill mask and the "not target" overlay while on, so the bar colour is even all the way to the border.
+
 ## [0.16.1]
 - Nameplates > Border: Retail only (hidden on Forever). Border now hugs the health bar itself and the fill is flat while the module is on, so there are no gaps in the corners.
 
