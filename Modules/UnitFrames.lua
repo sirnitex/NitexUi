@@ -16,7 +16,7 @@
 --   * Resting glow: one hooksecurefunc on PlayerFrame_UpdateStatus (event driven, not per
 --     frame) sets the glow's vertex alpha to 0 while resting. The combat glow is untouched.
 --   * Focus auras: one hooksecurefunc on FocusFrame:ConfigureAuraContainer hides the aura
---     container after Blizzard shows it.
+--     container after Blizzard shows it (faded with alpha instead if it is protected in combat).
 -- No events, no OnUpdate. Hooks are installed the first time an option is used and return
 -- immediately when off (hooks cannot be removed).
 
@@ -152,10 +152,21 @@ local function ApplyTargetRep(on)
     if rep then rep:SetAlpha((on and db().hideTargetRepColor) and 0 or 1) end
 end
 
+-- The aura container is a secure AuraContainer (12.1.5 source). If it counts as protected,
+-- Hide/Show are blocked in combat, so it is faded (alpha 0) there instead; out of combat
+-- it is hidden properly (no invisible tooltips).
 local focusActive, focusHooked = false, false
 
+local function HideFocusAuras(c)
+    if InCombatLockdown() and c:IsProtected() then
+        c:SetAlpha(0)
+    else
+        c:Hide()
+    end
+end
+
 local function OnFocusConfigure(self)
-    if focusActive then self:GetAuraContainer():Hide() end
+    if focusActive then HideFocusAuras(self:GetAuraContainer()) end
 end
 
 local function ApplyFocusAuras(on)
@@ -165,10 +176,14 @@ local function ApplyFocusAuras(on)
         focusHooked = true
         hooksecurefunc(FocusFrame, "ConfigureAuraContainer", OnFocusConfigure)
     end
+    local c = FocusFrame:GetAuraContainer()
     if focusActive then
-        FocusFrame:GetAuraContainer():Hide()
-    elseif focusHooked and FocusFrame.unit and UnitExists(FocusFrame.unit) then
-        FocusFrame:GetAuraContainer():Show() -- Blizzard keeps it updated from here
+        HideFocusAuras(c)
+    elseif focusHooked then
+        c:SetAlpha(1)
+        if FocusFrame.unit and UnitExists(FocusFrame.unit) and not (InCombatLockdown() and c:IsProtected()) then
+            c:Show() -- Blizzard keeps it updated from here
+        end
     end
 end
 
@@ -186,9 +201,10 @@ function P:OnInitialize()
     end
 end
 
+-- Only the reparenting waits for combat to end; alpha changes were done right away.
 function P:OnCombatEnded()
     ns:UnregisterEvent("PLAYER_REGEN_ENABLED", self)
-    self:Apply()
+    ApplyReparented(self.enabled)
 end
 
 --- Bring the player frame in line with the settings. Off = everything restored.

@@ -235,11 +235,6 @@ end
 ---------------------------------------------------------------------------
 -- Apply
 ---------------------------------------------------------------------------
-function M:OnCombatEnded()
-    ns:UnregisterEvent("PLAYER_REGEN_ENABLED", self)
-    self:Apply()
-end
-
 --- Bring every feature in line with the current settings. Off = everything restored.
 function M:Apply()
     db = ns.db.qol
@@ -248,12 +243,8 @@ function M:Apply()
     ApplyTalkingHead(on and db.hideTalkingHead or false)
     ApplyErrors(on and db.hideErrors or false)
 
-    -- Reparenting waits until combat ends.
-    if InCombatLockdown() then
-        ns:RegisterEvent("PLAYER_REGEN_ENABLED", self, self.OnCombatEnded)
-    else
-        ApplyZoneText(on and db.hideZoneText or false)
-    end
+    -- Zone text frames are not protected: no need to wait for combat to end.
+    ApplyZoneText(on and db.hideZoneText or false)
 
     if on and (db.sellJunk or db.autoRepair) then
         ns:RegisterEvent("MERCHANT_SHOW", self, self.OnMerchantShow)

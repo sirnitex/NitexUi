@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.0]
+- Options window font fixed: it always fell back to the client font (a font object's SetFont returns nothing, so the check failed). Expressway is now used.
+- Global Settings > Fonts no longer overrides the options window's own fonts, and Expressway can be chosen as the game font.
+- New /nitex font: shows which font file the options window uses.
+- Nameplates > Health Colors: UNIT_FLAGS / UNIT_FACTION are only watched while the Neutral colour (or Tapped on Forever) is on.
+- Quality of Life: hiding zone text no longer waits for combat to end.
+- Unit Frames: after combat only the class resources / totem frame are re-applied. Focus buffs/debuffs are faded instead of hidden if the frame is locked in combat.
+- Character Panel: when your inventory changes, only slots whose item changed are read again.
+
 ## [0.17.2]
 - Options window uses the Expressway font (bundled in Media/Fonts). Needs a full game restart the first time.
 

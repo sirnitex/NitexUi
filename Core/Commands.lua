@@ -17,6 +17,7 @@ commands.help = function()
     print("  /nitex reset - " .. L["HELP_RESET"])
     print("  /nitex version - " .. L["HELP_VERSION"])
     print("  /nitex np - " .. L["HELP_NP"])
+    print("  /nitex font - " .. L["HELP_FONT"])
 end
 
 commands.debug = function()
@@ -45,6 +46,15 @@ end
 
 commands.np = function()
     if ns.NameplateColors then ns.NameplateColors:Debug() end
+end
+
+-- Which font file the options window really uses (troubleshooting).
+commands.font = function()
+    local W = ns.Widgets
+    if not W or not W.FontNormal then return end
+    local file, size, flags = W.FontNormal:GetFont()
+    ns:Print(L["FONT_STATUS"]:format(tostring(file), tostring(size), flags ~= "" and tostring(flags) or "-"))
+    ns:Print(L["FONT_EXPECTED"]:format(W.FONT_FILE, (file == W.FONT_FILE) and "|cff33ff66OK|r" or "|cffff5555fallback|r"))
 end
 
 commands.version = function()

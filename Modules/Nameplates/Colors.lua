@@ -21,7 +21,8 @@
 --   * Forbidden nameplates (friendly plates in instances) are never touched.
 --
 -- Cost while ON: a few API calls per nameplate when it appears, when its threat list
--- changes, or when your quests/role change. Nothing per frame.
+-- changes, or when your quests/role change. UNIT_FLAGS/UNIT_FACTION only while the Neutral
+-- (or, on Forever, Tapped) colour is on. Nothing per frame.
 -- When OFF: no events. Hooks cannot be removed in WoW, so a bar hooked earlier this session
 -- returns immediately on its first line until you /reload.
 
@@ -262,7 +263,6 @@ end
 local function UpdateAll(force)
     for unit in next, active do Update(unit, force) end
 end
-M.UpdateAll = UpdateAll
 
 local function Attach(unit)
     local plate = C_NamePlate.GetNamePlateForUnit(unit) -- excludes forbidden plates
@@ -318,9 +318,29 @@ local EVENTS = {
     PLAYER_SPECIALIZATION_CHANGED = "RoleChanged",
 }
 
--- Faction/flags: a neutral mob entering combat, and (Forever) a mob turning grey when tagged.
-EVENTS.UNIT_FACTION = "UnitChanged"
-EVENTS.UNIT_FLAGS = "UnitChanged"
+-- Faction/flags fire often, so they are only watched when a colour needs them:
+-- Neutral (a neutral mob entering combat) or, on Forever, Tapped (a mob turning grey).
+local flagEvents = false
+
+local function RefreshFlagEvents()
+    local want = M.enabled and db and ((db.types.neutral and db.types.neutral.enabled)
+        or (ns.isForever and db.tapped.enabled)) or false
+    if want == flagEvents then return end
+    flagEvents = want
+    if want then
+        ns:RegisterEvent("UNIT_FACTION", M, M.UnitChanged)
+        ns:RegisterEvent("UNIT_FLAGS", M, M.UnitChanged)
+    else
+        ns:UnregisterEvent("UNIT_FACTION", M)
+        ns:UnregisterEvent("UNIT_FLAGS", M)
+    end
+end
+
+--- Used by the options after any colour change: re-paints and adds/removes flag events.
+function M.UpdateAll(force)
+    RefreshFlagEvents()
+    UpdateAll(force)
+end
 
 function M:OnEnable()
     db = ns.db.nameplates.colors
@@ -328,6 +348,7 @@ function M:OnEnable()
     for event, method in next, EVENTS do
         ns:RegisterEvent(event, self, self[method])
     end
+    RefreshFlagEvents()
     -- Nameplates that are already on screen.
     local plates = C_NamePlate.GetNamePlates()
     for i = 1, #plates do
@@ -341,6 +362,7 @@ function M:OnDisable()
     for event in next, EVENTS do
         ns:UnregisterEvent(event, self)
     end
+    RefreshFlagEvents() -- self.enabled is false here: removes them
     for unit in next, active do Detach(unit) end
     wipe(active)
     wipe(state) -- hooks left from this session now return on their first check

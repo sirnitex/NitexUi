@@ -28,6 +28,7 @@ M.fonts = {
     { value = "ARIALN",   text = "Arial Narrow",            file = [[Fonts\ARIALN.TTF]] },
     { value = "SKURRI",   text = "Skurri",                  file = [[Fonts\SKURRI.TTF]] },
     { value = "MORPHEUS", text = "Morpheus",                file = [[Fonts\MORPHEUS.TTF]] },
+    { value = "EXPRESSWAY", text = "Expressway",            file = [[Interface\AddOns\NitexUI\Media\Fonts\Expressway.ttf]] },
 }
 
 -- Font flags. SLUG = Blizzard's GPU text renderer (very crisp; only works without shadow).
@@ -105,6 +106,8 @@ function M:Apply()
     local list = GetFonts()
     for i = 1, #list do
         local entry = list[i]
+        -- GetFonts() also lists addon font objects: leave the options window's own fonts alone.
+        if type(entry) == "string" and entry:find("^NitexUIFont_") then entry = nil end
         local obj = type(entry) == "string" and _G[entry] or entry
         if type(obj) == "table" and obj.GetFont and obj.SetFont then
             ApplyTo(obj, file, outline.flags, outline.slug)

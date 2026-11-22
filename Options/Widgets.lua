@@ -16,9 +16,14 @@ ns.Widgets = W
 -- Options window font: Expressway (bundled, same file ElvUI ships). Falls back to the client font.
 local FONT = [[Interface\AddOns\NitexUI\Media\Fonts\Expressway.ttf]]
 
+W.FONT_FILE = FONT
+
+-- Font objects' SetFont returns nothing (only FontString/EditBox return success), so check
+-- with GetFont: a new font object has no file until a SetFont succeeds.
 local function MakeFont(name, size, color)
     local f = CreateFont(name)
-    if not f:SetFont(FONT, size, "") then f:SetFont(GameFontHighlight:GetFont(), size, "") end
+    f:SetFont(FONT, size, "")
+    if not f:GetFont() then f:SetFont(GameFontHighlight:GetFont(), size, "") end
     f:SetTextColor(unpack(color or T.text))
     f:SetShadowOffset(0, 0)
     return f

@@ -9,7 +9,8 @@
 --     so enchant names and gem/empty-socket icons are exactly Blizzard's)
 --
 -- Work happens only while the character window is open: on open, and when equipment,
--- enchants or gems change (PLAYER_EQUIPMENT_CHANGED / UNIT_INVENTORY_CHANGED).
+-- enchants or gems change (PLAYER_EQUIPMENT_CHANGED / UNIT_INVENTORY_CHANGED; the latter
+-- only redraws slots whose item link changed).
 -- These events are registered only while the window is shown. No OnUpdate, no timers.
 --
 -- When the module is OFF: nothing is registered or created. The OnShow/OnHide hooks on
@@ -52,7 +53,7 @@ local TEXT_W, GAP, GEM, MAX_GEMS, ILVL_W = 150, 6, 13, 3, 30
 local EMPTY_SOCKET = [[Interface\ItemSocketingFrame\UI-EmptySocket-%s]]
 
 local C_Item, C_TooltipInfo = C_Item, C_TooltipInfo
-local GetInventoryItemID = GetInventoryItemID
+local GetInventoryItemID, GetInventoryItemLink = GetInventoryItemID, GetInventoryItemLink
 local LineType = Enum and Enum.TooltipDataLineType
 local LT_ENCHANT = LineType and LineType.ItemEnchantmentPermanent
 local LT_GEM = LineType and LineType.GemSocket
@@ -116,9 +117,15 @@ end
 ---------------------------------------------------------------------------
 -- Update
 ---------------------------------------------------------------------------
-local function UpdateSlot(slotID)
+-- The item link holds item level bonuses, enchant and gems, so an unchanged link means
+-- nothing on that slot changed and the tooltip scan can be skipped.
+local function UpdateSlot(slotID, force)
     local o = overlays[slotID]
     if not o then return end
+    local link = GetInventoryItemLink("player", slotID)
+    if issecretvalue and issecretvalue(link) then link = nil; force = true end
+    if not force and link == o.link then return end
+    o.link = link
     local db = ns.db.interface.character
 
     o.ilvl:SetText("")
@@ -174,23 +181,24 @@ local function UpdateSlot(slotID)
     end
 end
 
-local function UpdateAll()
-    for slotID in pairs(overlays) do UpdateSlot(slotID) end
+local function UpdateAll(force)
+    for slotID in pairs(overlays) do UpdateSlot(slotID, force) end
 end
 
 function M:OnEquipmentChanged(_, slotID)
-    if overlays[slotID] then UpdateSlot(slotID) end
+    if overlays[slotID] then UpdateSlot(slotID, true) end
 end
 
+-- No slot in this event: only slots whose item link changed are redrawn.
 function M:OnInventoryChanged(_, unit)
-    if unit == "player" then UpdateAll() end
+    if unit == "player" then UpdateAll(false) end
 end
 
 -- Item data can arrive a moment after the window opens (first login, new item).
 -- Only a slot holding that exact item is redrawn.
 function M:OnItemInfo(_, itemID)
     for slotID in pairs(overlays) do
-        if GetInventoryItemID("player", slotID) == itemID then UpdateSlot(slotID) end
+        if GetInventoryItemID("player", slotID) == itemID then UpdateSlot(slotID, true) end
     end
 end
 
@@ -219,7 +227,7 @@ local function OnPanelShow()
         for i = 1, #SLOTS do CreateOverlay(SLOTS[i]) end
     end
     StartWatching()
-    UpdateAll()
+    UpdateAll(true)
 end
 
 local function OnPanelHide()
