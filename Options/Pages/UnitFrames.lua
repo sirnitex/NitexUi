@@ -50,7 +50,7 @@ Options:RegisterPage{
     key = "unitframes",
     label = L["PAGE_UF"],
     desc = L["PAGE_UF_DESC"],
-    order = 37,
+    order = 40,
     subtabs = {
         { key = "player", label = L["SUB_UF_PLAYER"], build = BuildPlayer },
         { key = "target", label = L["SUB_UF_TARGET"], build = BuildTarget },

@@ -31,7 +31,7 @@ Options:RegisterPage{
     key = "damagemeters",
     label = L["PAGE_DM"],
     desc = L["PAGE_DM_DESC"],
-    order = 45,
+    order = 60,
     subtabs = {
         { key = "general", label = L["SUB_GENERAL"], build = BuildGeneral },
     },

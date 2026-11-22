@@ -41,7 +41,7 @@ Options:RegisterPage{
     key = "qol",
     label = L["PAGE_QOL"],
     desc = L["PAGE_QOL_DESC"],
-    order = 35,
+    order = 70,
     subtabs = {
         { key = "general", label = L["SUB_GENERAL"], build = BuildGeneral },
     },

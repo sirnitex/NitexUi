@@ -257,7 +257,7 @@ local function SubPages_Select(self, key)
     end
     for k, sub in next, self.subs do
         if sub.page then sub.page:SetShown(k == key) end
-        sub.tab:SetSelected(k == key)
+        if sub.tab then sub.tab:SetSelected(k == key) end
     end
     if self.current ~= key then self.scroll:SetVerticalScroll(0) end
     info.page:Refresh()
@@ -272,9 +272,11 @@ end
 local function NewSubTabPage(parent, info)
     local p = NewPage(parent, info.label, info.desc)
 
+    -- A page with a single sub-page gets no tab bar, only the divider line.
+    local single = #info.subtabs == 1
     local bar = CreateFrame("Frame", nil, p)
     PP.Point(bar, "TOPLEFT", p.cursor, "BOTTOMLEFT", 0, -12)
-    PP.Size(bar, CONTENT_W, SUBTAB_H)
+    PP.Size(bar, CONTENT_W, single and 1 or SUBTAB_H)
     W.HLine(bar, T.border)
 
     -- Sub-pages live in a scroll frame, so long pages can be scrolled with the mouse wheel.
@@ -304,16 +306,18 @@ local function NewSubTabPage(parent, info)
     for i = 1, #info.subtabs do
         local sub = info.subtabs[i]
         p.subs[sub.key] = sub
-        sub.tab = W.SubTab(bar, sub.label, function()
-            PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
-            p:Select(sub.key)
-        end)
-        if prev then
-            PP.Point(sub.tab, "TOPLEFT", prev, "TOPRIGHT", 4, 0)
-        else
-            PP.Point(sub.tab, "TOPLEFT", bar, "TOPLEFT", 0, 0)
+        if not single then
+            sub.tab = W.SubTab(bar, sub.label, function()
+                PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
+                p:Select(sub.key)
+            end)
+            if prev then
+                PP.Point(sub.tab, "TOPLEFT", prev, "TOPRIGHT", 4, 0)
+            else
+                PP.Point(sub.tab, "TOPLEFT", bar, "TOPLEFT", 0, 0)
+            end
+            prev = sub.tab
         end
-        prev = sub.tab
     end
 
     p.Select = SubPages_Select
@@ -326,6 +330,8 @@ end
 -- Page registry
 --   Options:RegisterPage{ key, label, order, desc, build = function(parent) return page end }
 --   Options:RegisterPage{ key, label, order, desc, subtabs = { { key, label, build }, ... } }
+-- Optional fields:
+--   group   = "Label"                small group label in the sidebar above this page
 ---------------------------------------------------------------------------
 function Options:RegisterPage(info)
     registry[#registry + 1] = info
@@ -374,22 +380,10 @@ local function BuildGeneralMain(parent)
     return p
 end
 
-Options:RegisterPage{
-    key = "general",
-    label = L["PAGE_GENERAL"],
-    desc = L["PAGE_GENERAL_DESC"],
-    order = 10,
-    subtabs = {
-        { key = "main",     label = L["SUB_GENERAL"],  build = BuildGeneralMain },
-        -- Options/Pages/Profiles.lua defines Options.BuildProfiles (loaded after this file).
-        { key = "profiles", label = L["SUB_PROFILES"], build = function(parent) return Options.BuildProfiles(parent) end },
-    },
-}
+local function BuildAbout(parent)
+    local p = NewPage(parent)
 
-Options:RegisterPage{ key = "about", label = L["PAGE_ABOUT"], order = 90, build = function(parent)
-    local p = NewPage(parent, L["PAGE_ABOUT"], L["PAGE_ABOUT_DESC"])
-
-    p:Add(W.Header(p, "|cff" .. T.accentHex .. "Nitex|rUI"), 22)
+    p:Add(W.Header(p, "|cff" .. T.accentHex .. "Nitex|rUI"), 18)
     p:Add(W.Paragraph(p, L["ABOUT_TEXT"]:format(ns.version), W.FontNormal), 10)
 
     p:Add(W.Header(p, L["SECTION_COMMANDS"]), 26)
@@ -400,7 +394,21 @@ Options:RegisterPage{ key = "about", label = L["PAGE_ABOUT"], order = 90, build 
         "|cff" .. T.accentHex .. "/nitex debug|r  " .. L["HELP_DEBUG"] .. "\n" ..
         "|cff" .. T.accentHex .. "/nitex reset|r  " .. L["HELP_RESET"], W.FontNormal), 10)
     return p
-end }
+end
+
+Options:RegisterPage{
+    key = "general",
+    label = L["PAGE_GENERAL"],
+    desc = L["PAGE_GENERAL_DESC"],
+    order = 10,
+    subtabs = {
+        { key = "main",     label = L["SUB_GENERAL"],  build = BuildGeneralMain },
+        -- Options/Pages/Profiles.lua defines Options.BuildProfiles (loaded after this file).
+        { key = "profiles", label = L["SUB_PROFILES"], build = function(parent) return Options.BuildProfiles(parent) end },
+        { key = "about",    label = L["PAGE_ABOUT"],   build = BuildAbout },
+    },
+}
+
 
 ---------------------------------------------------------------------------
 -- Window
@@ -496,6 +504,21 @@ local function Build()
             PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
             SelectPage(info.key)
         end)
+        if info.group then
+            -- Group label in a fixed-height frame; tabs never anchor to a FontString.
+            local g = CreateFrame("Frame", nil, sidebar)
+            PP.Point(g, "TOPLEFT", prev or sidebar, prev and "BOTTOMLEFT" or "TOPLEFT", 0, prev and 0 or -12)
+            PP.Point(g, "TOPRIGHT", prev or sidebar, prev and "BOTTOMRIGHT" or "TOPRIGHT", 0, prev and 0 or -12)
+            PP.Height(g, 30)
+            local line = CreateFrame("Frame", nil, g)
+            PP.Point(line, "TOPLEFT", g, "TOPLEFT", 16, -8)
+            PP.Point(line, "TOPRIGHT", g, "TOPRIGHT", -16, -8)
+            PP.Height(line, 1)
+            W.HLine(line, T.border)
+            local t = W.Text(g, W.FontSmall, info.group:upper())
+            t:SetPoint("BOTTOMLEFT", 16, 4)
+            prev = g
+        end
         if prev then
             PP.Point(tab, "TOPLEFT", prev, "BOTTOMLEFT", 0, -2)
             PP.Point(tab, "TOPRIGHT", prev, "BOTTOMRIGHT", 0, -2)

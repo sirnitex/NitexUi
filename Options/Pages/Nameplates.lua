@@ -108,6 +108,6 @@ Options:RegisterPage{
     key = "nameplates",
     label = L["PAGE_NAMEPLATES"],
     desc = L["PAGE_NAMEPLATES_DESC"],
-    order = 40,
+    order = 50,
     subtabs = subtabs,
 }

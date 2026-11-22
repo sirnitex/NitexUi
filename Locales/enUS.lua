@@ -32,6 +32,7 @@ L["PAGE_GENERAL"] = "General"
 L["PAGE_GENERAL_DESC"] = "Core settings for NitexUI."
 L["PAGE_ABOUT"] = "About"
 L["PAGE_ABOUT_DESC"] = "Version and commands."
+L["NAV_MODULES"] = "Modules"
 
 -- Options: sections
 L["SECTION_MINIMAP"] = "Minimap"

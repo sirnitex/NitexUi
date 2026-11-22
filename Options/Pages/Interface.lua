@@ -115,6 +115,7 @@ Options:RegisterPage{
     label = L["PAGE_INTERFACE"],
     desc = L["PAGE_INTERFACE_DESC"],
     order = 30,
+    group = L["NAV_MODULES"],
     subtabs = {
         { key = "general", label = L["SUB_GENERAL"], build = BuildGeneral },
         { key = "minimap", label = L["SUB_MINIMAP"], build = BuildMinimap },

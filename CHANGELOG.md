@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.23.0]
+- Options window restructured. Sidebar order: General, Global Settings, Interface, Unit Frames, Nameplates, Damage Meters, Quality of Life.
+- About is now a tab under General (sidebar shows only the seven pages).
+- Sidebar: "Modules" group label above the module pages.
+- Pages with only one section no longer show a lone sub-tab bar.
+
 ## [0.22.3]
 - Damage Meters: snapping beside a window matches its height, snapping above or below matches its width. The other size is kept.
 

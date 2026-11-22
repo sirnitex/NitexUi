@@ -35,6 +35,7 @@ L["PAGE_GENERAL"] = "Generelt"
 L["PAGE_GENERAL_DESC"] = "Grunninnstillinger for NitexUI."
 L["PAGE_ABOUT"] = "Om"
 L["PAGE_ABOUT_DESC"] = "Versjon og kommandoer."
+L["NAV_MODULES"] = "Moduler"
 
 L["SECTION_DEVELOPER"] = "Utvikler"
 L["SECTION_DATA"] = "Data"

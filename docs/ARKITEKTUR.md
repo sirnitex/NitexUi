@@ -14,11 +14,12 @@ Les bare delen du trenger. Reglene står i `CLAUDE.md`.
 - `Options/Panel.lua`: `Options:RegisterPage{ key, label, order, desc, build | subtabs = {...} }`. Hjelpere: `Options.NewPage`, `page:Add(widget, gap, keepWidth)`, `Options.Columns`/`Options.EndColumns`, `Options.ModuleToggle`. Sidebygging i `SafeBuild`.
   - Sub-sider i ScrollFrame; høyden måles til `page.cursor`, så alt må legges til via `page:Add`/`EndColumns`.
   - Ikke tilgjengelig i kamp (lukkes på `PLAYER_REGEN_DISABLED`, åpnes igjen etter kamp).
-  - Order: General 10 · Global Settings 20 · Interface 30 · Quality of Life 35 · Unit Frames 37 · Nameplates 40 · Damage Meters 45 · About 90.
+  - Order: General 10 · Global Settings 20 · Interface 30 · Unit Frames 40 · Nameplates 50 · Damage Meters 60 · Quality of Life 70. About er en fane under General.
+  - Valgfritt `group = "Label"`: gruppetekst over siden i sidemenyen («Modules» på Interface). Side med én sub-fane får ingen fanelinje.
 - `Options/Widgets.lua`: `W.Header`, `W.Paragraph`, `W.Button(parent, label, width, onClick)`, `W.Toggle`, `W.Dropdown`, `W.ColorRow`, `W.EditBox`, `W.Tab`, `W.SubTab`. Font: Expressway (`W.FONT_FILE`); font-objektets `SetFont` returnerer ingenting – sjekk med `GetFont`.
 
 ## Sider og moduler (modulnavn i parentes)
-- General: minimap-knappen (`MinimapButton`), Profiles.
+- General: minimap-knappen (`MinimapButton`), Profiles, About.
 - Global Settings: Fonts (`Fonts`) – endrer Blizzards font-objekter fra `GetFonts()`, hopper over `NitexUIFont_*`.
 - Interface:
   - General (`InterfaceGeneral`): skjul bag-bar/mikromeny (hidden parent, venter på kampslutt). Mens mikromenyen er skjult: kø-øyet (`QueueStatusButton`) flyttes med Shift + dra (StartMoving, posisjon i `queueEyePos`, settes tilbake fra hook på `QueueStatusButton:UpdatePosition`).
