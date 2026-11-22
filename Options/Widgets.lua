@@ -371,12 +371,24 @@ local function Dropdown_Close(self)
     if openList == self.list then openList = nil end
 end
 
+--- Close whichever dropdown list is open (used when the options page scrolls).
+function W.CloseDropdown()
+    if openList then openList:Hide(); openList = nil end
+end
+
 local function DDButton_OnClick(button)
     local dd = button.owner
     if dd.list:IsShown() then
         dd:Close()
     else
         if openList then openList:Hide() end
+        -- Pages can sit in a scroll frame, which clips its children. The open list is
+        -- parented to the options window instead, so it is never cut off.
+        local top = NitexUIOptionsFrame
+        if top and dd.list:GetParent() ~= top then
+            dd.list:SetParent(top)
+            dd.list:SetFrameStrata("DIALOG")
+        end
         dd:Refresh()
         dd.list:Show()
         openList = dd.list

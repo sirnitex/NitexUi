@@ -195,17 +195,74 @@ end
 ---------------------------------------------------------------------------
 -- Page with sub-tabs: title, a sub-tab bar, and lazily built sub-pages below it.
 ---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+-- Scrolling (sub-page area). Mouse wheel only; no OnUpdate.
+-- The content height is measured when a sub-page is shown (top of the scroll child to
+-- the bottom of the page's last widget), never per frame.
+---------------------------------------------------------------------------
+local SCROLL_STEP, THUMB_MIN = 40, 24
+local GetNearestPixelSize = PixelUtil.GetNearestPixelSize
+
+local function Scroll_UpdateThumb(scroll)
+    local thumb = scroll.thumb
+    local range = scroll:GetVerticalScrollRange()
+    if not range or range <= 0 then thumb:Hide(); return end
+    local viewH = scroll:GetHeight()
+    local h = math.max(THUMB_MIN, viewH * viewH / (viewH + range))
+    PP.Height(thumb, h)
+    PP.Point(thumb, "TOPRIGHT", scroll, "TOPRIGHT", -6, -(viewH - h) * scroll:GetVerticalScroll() / range)
+    thumb:Show()
+end
+
+local function Scroll_SetOffset(scroll, v)
+    local range = scroll:GetVerticalScrollRange() or 0
+    if v > range then v = range end
+    if v < 0 then v = 0 end
+    -- Whole physical pixels, so 1px lines in the content stay sharp while scrolled.
+    scroll:SetVerticalScroll(GetNearestPixelSize(v, scroll:GetEffectiveScale()))
+    Scroll_UpdateThumb(scroll)
+end
+
+local function Scroll_OnMouseWheel(scroll, delta)
+    W.CloseDropdown()
+    Scroll_SetOffset(scroll, scroll:GetVerticalScroll() - delta * SCROLL_STEP)
+end
+
+local function Scroll_OnRangeChanged(scroll)
+    Scroll_SetOffset(scroll, scroll:GetVerticalScroll())
+end
+
+local function Scroll_OnSizeChanged(scroll, w)
+    PP.Width(scroll.child, w)
+    Scroll_UpdateThumb(scroll)
+end
+
+local function Scroll_FitContent(scroll, page)
+    local top, bottom = scroll.child:GetTop(), page.cursor:GetBottom()
+    if not (top and bottom) then
+        -- Layout not resolved yet (first show): measure on the next frame, once.
+        C_Timer.After(0, function()
+            if page:IsShown() then Scroll_FitContent(scroll, page) end
+        end)
+        return
+    end
+    PP.Height(scroll.child, top - bottom + PAD)
+    Scroll_SetOffset(scroll, scroll:GetVerticalScroll())
+end
+
 local function SubPages_Select(self, key)
     local info = self.subs[key]
     if not info.page then
-        info.page = SafeBuild(info.label, info.build, self.area)
+        info.page = SafeBuild(info.label, info.build, self.scroll.child)
     end
     for k, sub in next, self.subs do
         if sub.page then sub.page:SetShown(k == key) end
         sub.tab:SetSelected(k == key)
     end
+    if self.current ~= key then self.scroll:SetVerticalScroll(0) end
     info.page:Refresh()
     self.current = key
+    Scroll_FitContent(self.scroll, info.page)
 end
 
 local function SubPages_Refresh(self)
@@ -220,10 +277,27 @@ local function NewSubTabPage(parent, info)
     PP.Size(bar, CONTENT_W, SUBTAB_H)
     W.HLine(bar, T.border)
 
-    local area = CreateFrame("Frame", nil, p)
-    PP.Point(area, "TOPLEFT", bar, "BOTTOMLEFT", -PAD, 0)
-    area:SetPoint("BOTTOMRIGHT")
-    p.area = area
+    -- Sub-pages live in a scroll frame, so long pages can be scrolled with the mouse wheel.
+    local scroll = CreateFrame("ScrollFrame", nil, p)
+    PP.Point(scroll, "TOPLEFT", bar, "BOTTOMLEFT", -PAD, 0)
+    PP.Point(scroll, "BOTTOMRIGHT", p, "BOTTOMRIGHT", 0, 0)
+    local child = CreateFrame("Frame", nil, scroll)
+    PP.Size(child, CONTENT_W + PAD * 2, 1)
+    scroll:SetScrollChild(child)
+    scroll.child = child
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", Scroll_OnMouseWheel)
+    scroll:SetScript("OnScrollRangeChanged", Scroll_OnRangeChanged)
+    scroll:SetScript("OnSizeChanged", Scroll_OnSizeChanged)
+
+    local thumb = CreateFrame("Frame", nil, p)
+    thumb:SetFrameLevel(scroll:GetFrameLevel() + 60) -- above module blockers
+    PP.PixelWidth(thumb, 3)
+    W.Fill(thumb, "OVERLAY", T.accentDim):SetAllPoints()
+    thumb:Hide()
+    scroll.thumb = thumb
+    p.scroll = scroll
+    p.area = child
 
     p.subs = {}
     local prev

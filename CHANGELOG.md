@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.13.1]
+- Options: long pages can now be scrolled with the mouse wheel (thin scroll indicator on the right). Open dropdown lists are no longer cut off and close when you scroll.
+
 ## [0.13.0]
 - New page Quality of Life (one module, a switch per feature): hide talking head (voice still plays), hide error messages, hide zone text, sell junk, repair (guild bank first optional).
 - Retail only: quick sign-up in the group finder (hold Shift for the normal dialog) and accepting group invites (friends/guild only, or anyone).
