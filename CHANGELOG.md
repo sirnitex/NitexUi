@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.24.0]
+- New Interface > Databars (module, off by default): a small bar in Blizzard's tooltip style with FPS, latency, durability, gold, free bag slots, item level and clock. Each element has its own switch. Clicks open the character panel, bags or calendar.
+- Databars size: width, height and font size.
+- Databars position: move it in Blizzard's Edit Mode (Blizzard's own highlight), or with Shift + drag at any time. Reset button puts it back at the top centre.
+
 ## [0.23.0]
 - Options window restructured. Sidebar order: General, Global Settings, Interface, Unit Frames, Nameplates, Damage Meters, Quality of Life.
 - About is now a tab under General (sidebar shows only the seven pages).

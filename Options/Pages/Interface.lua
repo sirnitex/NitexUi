@@ -108,6 +108,66 @@ local function BuildTooltip(parent)
 end
 
 ---------------------------------------------------------------------------
+-- Sub-tab: Databars
+---------------------------------------------------------------------------
+local DB_WIDTHS = {
+    { value = 300, text = "300" }, { value = 400, text = "400" }, { value = 500, text = "500" },
+    { value = 600, text = "600" }, { value = 800, text = "800" }, { value = 1000, text = "1000" },
+}
+
+local DB_HEIGHTS = {
+    { value = 18, text = "18" }, { value = 20, text = "20" }, { value = 22, text = "22" },
+    { value = 24, text = "24" }, { value = 26, text = "26" }, { value = 28, text = "28" },
+    { value = 32, text = "32" },
+}
+local DB_FONTSIZES = {
+    { value = 9, text = "9" }, { value = 10, text = "10" }, { value = 11, text = "11" },
+    { value = 12, text = "12" }, { value = 13, text = "13" }, { value = 14, text = "14" },
+    { value = 16, text = "16" },
+}
+
+local function BuildDatabars(parent)
+    local M = ns.InterfaceDatabars
+    local db = ns.db.interface.databars
+    local p = Options.NewPage(parent)
+
+    Options.ModuleToggle(p, "InterfaceDatabars", L["OPT_IFDATABARS_ENABLE"], L["OPT_IFDATABARS_ENABLE_DESC"])
+
+    p:Add(W.Header(p, L["SECTION_DB_ELEMENTS"]), 14)
+    local keys = {
+        { "fps", "OPT_DB_FPS" }, { "latency", "OPT_DB_LATENCY" }, { "durability", "OPT_DB_DURABILITY" },
+        { "gold", "OPT_DB_GOLD" }, { "bags", "OPT_DB_BAGS" }, { "itemLevel", "OPT_DB_ITEMLEVEL" },
+        { "clock", "OPT_DB_CLOCK" },
+    }
+    for i = 1, #keys do
+        local key, loc = keys[i][1], keys[i][2]
+        p:Add(W.Toggle(p, L[loc], L[loc .. "_DESC"],
+            function() return db[key] end,
+            function(v) db[key] = v; M:Apply() end), i == 1 and 10 or 6)
+    end
+
+    p:Add(W.Header(p, L["SECTION_DB_LAYOUT"]), 16)
+    p:Add(W.Dropdown(p, L["OPT_DB_WIDTH"], 160, DB_WIDTHS,
+        function() return db.width end,
+        function(v) db.width = v; M:Apply() end), 10)
+    p:Add(W.Dropdown(p, L["OPT_DB_HEIGHT"], 160, DB_HEIGHTS,
+        function() return db.height end,
+        function(v) db.height = v; M:Apply() end), 10)
+    p:Add(W.Dropdown(p, L["OPT_DB_FONTSIZE"], 160, DB_FONTSIZES,
+        function() return db.fontSize end,
+        function(v) db.fontSize = v; M:Apply() end), 10)
+
+    p:Add(W.Header(p, L["SECTION_DB_POSITION"]), 16)
+    p:Add(W.Toggle(p, L["OPT_DB_EDITMODE"], L["OPT_DB_EDITMODE_DESC"],
+        function() return db.editMode end,
+        function(v) db.editMode = v; M:Apply() end), 10)
+    p:Add(W.Button(p, L["OPT_DB_RESET"], 160, function() M:ResetPosition() end), 10)
+
+    p:Add(W.Paragraph(p, L["IFDATABARS_NOTE"]), 16)
+    return p
+end
+
+---------------------------------------------------------------------------
 -- Register
 ---------------------------------------------------------------------------
 Options:RegisterPage{
@@ -121,5 +181,6 @@ Options:RegisterPage{
         { key = "minimap", label = L["SUB_MINIMAP"], build = BuildMinimap },
         { key = "character", label = L["SUB_CHARACTER"], build = BuildCharacter },
         { key = "tooltip", label = L["SUB_TOOLTIP"], build = BuildTooltip },
+        { key = "databars", label = L["SUB_DATABARS"], build = BuildDatabars },
     },
 }
