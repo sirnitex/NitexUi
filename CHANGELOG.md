@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.22.2]
+- Damage Meters: DPS/HPS under 1000 is shown as a whole number (121 instead of 120.81176470588).
+
 ## [0.22.1]
 - Damage Meters: fixed a Lua error in combat with "Hide rank" (secret values). In combat the name is shown without the small elite/faction icon until combat ends.
 

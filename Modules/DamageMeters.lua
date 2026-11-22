@@ -52,9 +52,32 @@ local registered = {}                                    -- [scrollBox] = true w
 ---------------------------------------------------------------------------
 -- Number formatting
 ---------------------------------------------------------------------------
-local abbrevOptions -- { config = <cached Blizzard config> } or nil (= Blizzard's defaults)
+-- Blizzard's default breakpoints (1.2K, 15K, 1.5M ...) plus one extra step: from 1 and up,
+-- whole numbers. Without it, DPS under 1000 is shown with all its decimals (120.81176470588).
+-- Built once; AbbreviateNumbers does the rounding natively, so it also works on secret values.
+local abbrevOptions  -- { config = <cached Blizzard config> } or nil (= Blizzard's defaults)
+local wholeNumbers = false -- true when the config rounds numbers under 1000 itself
+local floor = math.floor
+
+local function BuildAbbrevOptions()
+    if not (CreateAbbreviateConfig and C_StringUtil and C_StringUtil.GetDefaultAbbreviationBreakpoints) then return end
+    local data = C_StringUtil.GetDefaultAbbreviationBreakpoints()
+    if type(data) ~= "table" then return end
+    data[#data + 1] = { breakpoint = 1, abbreviation = "", significandDivisor = 1, fractionDivisor = 1,
+                        abbreviationIsGlobal = false }
+    local ok, config = pcall(CreateAbbreviateConfig, data)
+    if ok and config then
+        abbrevOptions, wholeNumbers = { config = config }, true
+        return
+    end
+    -- Extra step refused: Blizzard's defaults only (readable values are rounded in Abbr).
+    data[#data] = nil
+    ok, config = pcall(CreateAbbreviateConfig, data)
+    if ok and config then abbrevOptions = { config = config } end
+end
 
 local function Abbr(v)
+    if not wholeNumbers and not issecretvalue(v) and v < 1000 then v = floor(v + 0.5) end
     return AbbreviateNumbers(v, abbrevOptions)
 end
 
@@ -257,10 +280,7 @@ function M:Apply()
     active = self.enabled and true or false
 
     if active then
-        if not abbrevOptions and CreateAbbreviateConfig and C_StringUtil and C_StringUtil.GetDefaultAbbreviationBreakpoints then
-            local ok, config = pcall(CreateAbbreviateConfig, C_StringUtil.GetDefaultAbbreviationBreakpoints())
-            if ok and config then abbrevOptions = { config = config } end
-        end
+        if not abbrevOptions then BuildAbbrevOptions() end
         if not dmHooked then
             dmHooked = true
             hooksecurefunc(DamageMeter, "SetupSessionWindow", OnSetupSessionWindow)
