@@ -52,6 +52,31 @@ local function BuildMinimap(parent)
 end
 
 ---------------------------------------------------------------------------
+-- Sub-tab: Character Panel
+---------------------------------------------------------------------------
+local function BuildCharacter(parent)
+    local M = ns.CharacterPanel
+    local db = ns.db.interface.character
+    local p = Options.NewPage(parent)
+
+    Options.ModuleToggle(p, "CharacterPanel", L["OPT_IFCHAR_ENABLE"], L["OPT_IFCHAR_ENABLE_DESC"])
+
+    p:Add(W.Header(p, L["SECTION_CHAR_SHOW"]), 14)
+    p:Add(W.Toggle(p, L["OPT_CHAR_ILVL"], L["OPT_CHAR_ILVL_DESC"],
+        function() return db.itemLevel end,
+        function(v) db.itemLevel = v; M:Apply() end), 10)
+    p:Add(W.Toggle(p, L["OPT_CHAR_ENCHANTS"], L["OPT_CHAR_ENCHANTS_DESC"],
+        function() return db.enchants end,
+        function(v) db.enchants = v; M:Apply() end), 6)
+    p:Add(W.Toggle(p, L["OPT_CHAR_GEMS"], L["OPT_CHAR_GEMS_DESC"],
+        function() return db.gems end,
+        function(v) db.gems = v; M:Apply() end), 6)
+
+    p:Add(W.Paragraph(p, L["IFCHAR_NOTE"]), 16)
+    return p
+end
+
+---------------------------------------------------------------------------
 -- Register
 ---------------------------------------------------------------------------
 Options:RegisterPage{
@@ -62,5 +87,6 @@ Options:RegisterPage{
     subtabs = {
         { key = "general", label = L["SUB_GENERAL"], build = BuildGeneral },
         { key = "minimap", label = L["SUB_MINIMAP"], build = BuildMinimap },
+        { key = "character", label = L["SUB_CHARACTER"], build = BuildCharacter },
     },
 }

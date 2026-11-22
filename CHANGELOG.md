@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.14.0]
+- New module Interface > Character Panel: item level (quality coloured), enchant name and gem icons (empty sockets marked) next to every equipped item on Blizzard's character window. Retail and Forever.
+
 ## [0.13.1]
 - Options: long pages can now be scrolled with the mouse wheel (thin scroll indicator on the right). Open dropdown lists are no longer cut off and close when you scroll.
 
