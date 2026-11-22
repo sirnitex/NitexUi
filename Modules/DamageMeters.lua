@@ -17,6 +17,9 @@
 --   * Secret values (combat): no arithmetic or comparisons on them. If the percentage
 --     cannot be computed (secret in combat), it is left out until the values are readable.
 --
+--   * Never call a Blizzard entry method from our hooks unless every field it compares or
+--     calculates with is checked with issecretvalue first (see CanFormatName).
+--
 -- Cost: the same work Blizzard already does per entry update (one string format). No events
 -- while on (except waiting for Blizzard_DamageMeter to load), no OnUpdate.
 -- When OFF: nothing registered. Hooks cannot be removed; they return on their first line.
@@ -112,10 +115,23 @@ end
 ---------------------------------------------------------------------------
 -- Entry hooks
 ---------------------------------------------------------------------------
+-- Blizzard's GetFormattedSourceNameText compares classification, isClassColorDesired,
+-- sourceDisplayType and factionGroup. Those can be secret in combat, and comparing them from
+-- our (tainted) hook errors. So it is only called when all four are readable; otherwise the
+-- plain name is used (without the small elite/faction icon until the values are readable).
+local function CanFormatName(e)
+    return not (issecretvalue(e.classification) or issecretvalue(e.isClassColorDesired)
+        or issecretvalue(e.sourceDisplayType) or issecretvalue(e.factionGroup))
+end
+
 local function OnUpdateName(e)
     if not (active and db.hideRank) then return end
     if not e.GetFormattedSourceNameText or IsDeathRecap(e) or not Has(e.sourceName) then return end
-    e:GetName():SetText(e:GetFormattedSourceNameText())
+    if CanFormatName(e) then
+        e:GetName():SetText(e:GetFormattedSourceNameText())
+    else
+        e:GetName():SetText(e.sourceName)
+    end
 end
 
 local function OnUpdateValue(e)

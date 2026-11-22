@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.22.1]
+- Damage Meters: fixed a Lua error in combat with "Hide rank" (secret values). In combat the name is shown without the small elite/faction icon until combat ends.
+
 ## [0.22.0]
 - New page Damage Meters (module, off by default) for Blizzard's own damage meter: snap windows to each other (same width and height, edge to edge), hide the rank number, and short numbers (1.5M instead of 1500K).
 
