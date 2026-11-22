@@ -40,26 +40,55 @@ function ns:UnregisterEvent(event, owner)
     end
 end
 
+-- Unit events for the player only (RegisterUnitEvent), on their own frame so a module that
+-- wants e.g. UNIT_AURA for the player never gets it for every other unit.
+local playerFrame = CreateFrame("Frame")
+local playerHandlers = {} -- [event] = { [owner] = func }
+
+function ns:RegisterPlayerEvent(event, owner, func)
+    if not playerHandlers[event] then
+        playerHandlers[event] = {}
+        playerFrame:RegisterUnitEvent(event, "player")
+    end
+    playerHandlers[event][owner] = func
+end
+
+function ns:UnregisterPlayerEvent(event, owner)
+    local list = playerHandlers[event]
+    if not list then return end
+    list[owner] = nil
+    if next(list) == nil then
+        playerHandlers[event] = nil
+        playerFrame:UnregisterEvent(event)
+    end
+end
+
 --- Debug helper: every event currently registered, with the owner (module) that wants it.
 function ns:DumpEvents()
     local count = 0
-    for event, list in next, handlers do
-        for owner in next, list do
-            count = count + 1
-            local name = owner == self and "Core" or (type(owner) == "table" and owner.name) or tostring(owner)
-            print("  " .. event .. "  <- " .. name)
+    for i = 1, 2 do
+        local all = i == 1 and handlers or playerHandlers
+        for event, list in next, all do
+            for owner in next, list do
+                count = count + 1
+                local name = owner == self and "Core" or (type(owner) == "table" and owner.name) or tostring(owner)
+                print("  " .. event .. (i == 2 and " (player)" or "") .. "  <- " .. name)
+            end
         end
     end
     return count
 end
 
-eventFrame:SetScript("OnEvent", function(_, event, ...)
-    local list = handlers[event]
+local function Dispatch(all, event, ...)
+    local list = all[event]
     if not list then return end
     for owner, func in next, list do
         func(owner, event, ...)
     end
-end)
+end
+
+eventFrame:SetScript("OnEvent", function(_, event, ...) Dispatch(handlers, event, ...) end)
+playerFrame:SetScript("OnEvent", function(_, event, ...) Dispatch(playerHandlers, event, ...) end)
 
 ---------------------------------------------------------------------------
 -- Modules

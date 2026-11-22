@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.25.0]
+- New page Forever (only on the Forever client), five modules, all off by default:
+  - Flight Timer: a bar in Blizzard's cast bar style counts down while you fly, with the destination underneath. Each route is learned the first time you fly it; until then the bar shows the time so far. Flight time also shows when you hover a flight point on the taxi map. Test bar, Shift + drag, reset and "Forget learned routes".
+  - Camping: a message when a campfire is nearby and you have no camp buffs, and 5 minutes before Camp Benefits run out.
+  - Reminders: icons for class buffs you know but are missing (Arcane Intellect, Mage/Ice/Frost Armor, Fortitude, Mark of the Wild, Blessing, Aura, Demon Armor, Lightning Shield, Aspect, ...), weapon buffs (poisons, imbues) and Well Fed. Only out of combat.
+  - Weapon Skills: your skill in weapon tooltips (red if not learned), a message when an equipped weapon's skill is maxed, and a hint when it is far below the maximum.
+  - Ammo & Reagents: icons with how much ammo and class reagents you carry, red when low, and a list of low items at vendors.
+- Core: player-only unit events (`ns:RegisterPlayerEvent`), shown in `/nitex status`.
+
 ## [0.24.0]
 - New Interface > Databars (module, off by default): a small bar in Blizzard's tooltip style with FPS, latency, durability, gold, free bag slots, item level and clock. Each element has its own switch. Clicks open the character panel, bags or calendar.
 - Databars size: width, height and font size.
