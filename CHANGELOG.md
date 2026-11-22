@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.17.2]
+- Options window uses the Expressway font (bundled in Media/Fonts). Needs a full game restart the first time.
+
 ## [0.17.1]
 - Unit Frames split into three modules with their own sub-tab and switch: Player, Target, Focus. If Unit Frames was on, all three are turned on.
 
