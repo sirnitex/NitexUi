@@ -21,11 +21,13 @@ local _, ns = ...
 local M = ns:NewModule("CharacterPanel")
 ns.CharacterPanel = M
 local PP = ns.PP
+local L = ns.L
 
 ns.defaults.interface = ns.defaults.interface or {}
 ns.defaults.interface.character = {
     itemLevel = true,
     enchants = true,
+    missingEnchant = true,
     gems = true,
 }
 
@@ -49,7 +51,8 @@ local SLOTS = {
     { 17, "CharacterSecondaryHandSlot", "R" },
 }
 
-local TEXT_W, GAP, GEM, MAX_GEMS, ILVL_W = 150, 6, 13, 3, 30
+-- TEXT_W: the text from the left and right columns must not meet in the middle.
+local TEXT_W, GAP, GEM, MAX_GEMS, ILVL_W = 118, 6, 13, 3, 30
 local EMPTY_SOCKET = [[Interface\ItemSocketingFrame\UI-EmptySocket-%s]]
 
 local C_Item, C_TooltipInfo = C_Item, C_TooltipInfo
@@ -60,6 +63,45 @@ local LT_GEM = LineType and LineType.GemSocket
 
 -- "Enchanted: %s" -> "Enchanted: " (localized by Blizzard), stripped from the enchant line.
 local enchantPrefix = ENCHANTED_TOOLTIP_LINE and ENCHANTED_TOOLTIP_LINE:gsub("%%s", "")
+
+-- Slots that can be enchanted in Midnight (Retail): head, shoulder, chest, legs
+-- (spellthread / armor kit), feet, rings, weapons. The off hand only when it is a weapon.
+local ENCHANTABLE = { [1] = true, [3] = true, [5] = true, [7] = true, [8] = true,
+                      [11] = true, [12] = true, [16] = true, [17] = "weapon" }
+local WEAPON = Enum and Enum.ItemClass and Enum.ItemClass.Weapon
+local GetItemInfoInstant = C_Item.GetItemInfoInstant or GetItemInfoInstant
+
+-- Shorter enchant text: "Enchant Helm - Empowered Hex of Leeching" -> "Empowered Hex of Leeching",
+-- and long stat words abbreviated (only runs when a slot changes, never per frame).
+local SHORT = {
+    { "Agility", "Agi" }, { "Strength", "Str" }, { "Intellect", "Int" }, { "Stamina", "Stam" },
+    { "Critical Strike", "Crit" }, { "Versatility", "Vers" }, { "Mastery", "Mast" },
+    { "Avoidance", "Avoid" }, { " & ", " " },
+}
+local function ShortEnchant(text)
+    local dash = text:find(" - ", 1, true)
+    if dash then text = text:sub(dash + 3) end
+    for i = 1, #SHORT do
+        local s = SHORT[i]
+        text = text:gsub(s[1], s[2])
+    end
+    return text
+end
+
+local function IsEnchantable(slotID)
+    local e = ENCHANTABLE[slotID]
+    if e ~= "weapon" then return e end
+    local itemID = GetInventoryItemID("player", slotID)
+    if not (itemID and WEAPON and GetItemInfoInstant) then return false end
+    local classID = select(6, GetItemInfoInstant(itemID))
+    return classID == WEAPON
+end
+
+-- Only nag about missing enchants at max level (levelling gear is rarely enchanted).
+local function AtMaxLevel()
+    local max = GetMaxLevelForPlayerExpansion and GetMaxLevelForPlayerExpansion()
+    return not max or UnitLevel("player") >= max
+end
 
 local overlays = {} -- [slotID] = overlay frame
 local hooked, watching = false, false
@@ -158,16 +200,21 @@ local function UpdateSlot(slotID, force)
     local lines = data and data.lines
     if not lines then return end
 
-    local gemCount = 0
+    local gemCount, hasEnchant = 0, false
     for i = 1, #lines do
         local line = lines[i]
         local t = line.type
         if db.enchants and t == LT_ENCHANT and line.leftText then
+            hasEnchant = true
             local text = line.leftText
-            if enchantPrefix and not (issecretvalue and issecretvalue(text)) then
-                local s, e = text:find(enchantPrefix, 1, true)
-                if s == 1 then text = text:sub(e + 1) end
+            if not (issecretvalue and issecretvalue(text)) then
+                if enchantPrefix then
+                    local s, e = text:find(enchantPrefix, 1, true)
+                    if s == 1 then text = text:sub(e + 1) end
+                end
+                text = ShortEnchant(text)
             end
+            o.enchant:SetTextColor(0.1, 1, 0.1)
             o.enchant:SetText(text)
         elseif db.gems and t == LT_GEM and gemCount < MAX_GEMS then
             local icon = line.gemIcon or (line.socketType and EMPTY_SOCKET:format(line.socketType))
@@ -178,6 +225,13 @@ local function UpdateSlot(slotID, force)
                 tex:Show()
             end
         end
+    end
+
+    -- Red "Missing enchant" (Retail only: the enchantable slots above are Midnight's).
+    if db.enchants and db.missingEnchant and not hasEnchant and ns.isRetail
+        and IsEnchantable(slotID) and AtMaxLevel() then
+        o.enchant:SetTextColor(1, 0.2, 0.2)
+        o.enchant:SetText(L["CP_MISSING_ENCHANT"])
     end
 end
 

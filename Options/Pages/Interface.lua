@@ -68,6 +68,11 @@ local function BuildCharacter(parent)
     p:Add(W.Toggle(p, L["OPT_CHAR_ENCHANTS"], L["OPT_CHAR_ENCHANTS_DESC"],
         function() return db.enchants end,
         function(v) db.enchants = v; M:Apply() end), 6)
+    if ns.isRetail then
+        p:Add(W.Toggle(p, L["OPT_CHAR_MISSING"], L["OPT_CHAR_MISSING_DESC"],
+            function() return db.missingEnchant end,
+            function(v) db.missingEnchant = v; M:Apply() end), 6)
+    end
     p:Add(W.Toggle(p, L["OPT_CHAR_GEMS"], L["OPT_CHAR_GEMS_DESC"],
         function() return db.gems end,
         function(v) db.gems = v; M:Apply() end), 6)

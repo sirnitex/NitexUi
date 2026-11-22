@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.19.0]
+- Character Panel: shorter enchant text ("Enchant Helm - " removed, stat names abbreviated) and narrower text, so the left and right columns no longer run into each other.
+- Character Panel (Retail): red "Missing enchant" on items that can be enchanted but are not (head, shoulder, chest, legs, feet, rings, weapons; max level only). Own switch.
+
 ## [0.18.1]
 - Unit Frames: fixed a Lua error from the Warlock soul shard bar (and other class bars) when entering or leaving combat while class resources were hidden.
 
