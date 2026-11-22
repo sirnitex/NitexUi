@@ -71,6 +71,29 @@ local function BuildColors(parent)
 end
 
 ---------------------------------------------------------------------------
+-- Sub-tab: Border
+---------------------------------------------------------------------------
+local function BuildBorder(parent)
+    local M = ns.NameplateBorder
+    local db = ns.db.nameplates.border
+    local p = Options.NewPage(parent)
+    local function Changed() M:Refresh() end
+
+    Options.ModuleToggle(p, "NameplateBorder", L["OPT_NPBORDER_ENABLE"], L["OPT_NPBORDER_ENABLE_DESC"])
+
+    p:Add(W.Header(p, L["SECTION_NPBORDER"]), 14)
+    p:Add(W.ColorRow(p, L["OPT_NPBORDER_COLOR"], nil, nil,
+        function() return db.color end, Changed), 8)
+    p:Add(W.ColorRow(p, L["OPT_NPBORDER_TARGET"],
+        function() return db.target.enabled end,
+        function(v) db.target.enabled = v end,
+        function() return db.target.color end, Changed), 4)
+
+    p:Add(W.Paragraph(p, L["NPBORDER_NOTE"]), 16)
+    return p
+end
+
+---------------------------------------------------------------------------
 -- Register
 ---------------------------------------------------------------------------
 Options:RegisterPage{
@@ -80,5 +103,6 @@ Options:RegisterPage{
     order = 40,
     subtabs = {
         { key = "colors", label = L["SUB_HEALTHCOLORS"], build = BuildColors },
+        { key = "border", label = L["SUB_NPBORDER"], build = BuildBorder },
     },
 }

@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.16.0]
+- New module Nameplates > Border (test): replaces Blizzard's nameplate border with a 1px line, with its own colour for your target.
+
 ## [0.15.3]
 - Mini Enemy colour removed: all ordinary enemies use the Enemy colour.
 - New /nitex np: prints what the nameplate colours see for your target (for troubleshooting).

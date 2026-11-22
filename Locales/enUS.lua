@@ -190,3 +190,12 @@ L["OPT_CHAR_ENCHANTS_DESC"] = "The enchant name in green, as shown in the item t
 L["OPT_CHAR_GEMS"] = "Gems"
 L["OPT_CHAR_GEMS_DESC"] = "Gem icons. Empty sockets show the empty-socket icon."
 L["IFCHAR_NOTE"] = "Shown on Blizzard's own character window (C). Only updates while the window is open and your gear changes."
+
+-- Nameplates > Border
+L["SUB_NPBORDER"] = "Border"
+L["OPT_NPBORDER_ENABLE"] = "Enable Nameplates: Border"
+L["OPT_NPBORDER_ENABLE_DESC"] = "Replace Blizzard's nameplate border with a thin 1px line. Off by default."
+L["SECTION_NPBORDER"] = "1px border"
+L["OPT_NPBORDER_COLOR"] = "Border colour"
+L["OPT_NPBORDER_TARGET"] = "Target border colour"
+L["NPBORDER_NOTE"] = "Works on Blizzard's own nameplates. Friendly nameplates inside instances are protected by Blizzard and keep their normal look."

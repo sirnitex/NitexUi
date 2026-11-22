@@ -181,3 +181,12 @@ L["OPT_CHAR_ENCHANTS_DESC"] = "Navnet på enchanten i grønt, slik det står i t
 L["OPT_CHAR_GEMS"] = "Gems"
 L["OPT_CHAR_GEMS_DESC"] = "Gem-ikoner. Tomme sockets vises med tom-socket-ikonet."
 L["IFCHAR_NOTE"] = "Vises i Blizzards eget karaktervindu (C). Oppdateres bare mens vinduet er åpent og utstyret endres."
+
+-- Nameplates > Border
+L["SUB_NPBORDER"] = "Kantlinje"
+L["OPT_NPBORDER_ENABLE"] = "Slå på Nameplates: Kantlinje"
+L["OPT_NPBORDER_ENABLE_DESC"] = "Bytt Blizzards nameplate-kant med en tynn 1px linje. Av som standard."
+L["SECTION_NPBORDER"] = "1px kantlinje"
+L["OPT_NPBORDER_COLOR"] = "Farge på kant"
+L["OPT_NPBORDER_TARGET"] = "Farge på kant for target"
+L["NPBORDER_NOTE"] = "Virker på Blizzards egne nameplates. Vennlige nameplates inne i instanser er beskyttet av Blizzard og beholder vanlig utseende."
