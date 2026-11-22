@@ -1,6 +1,7 @@
 -- NitexUI: Unit Frames (Retail only)
 --
--- Small changes to Blizzard's own player, target and focus frames.
+-- Small changes to Blizzard's own player, target and focus frames. Three modules, each with
+-- its own sub-tab and on/off switch: UnitFramesPlayer, UnitFramesTarget, UnitFramesFocus.
 --   Player: hide class resources, totem frame, combat text (hit indicator), resting "Zzz",
 --           resting glow.
 --   Target: hide the reputation colour strip behind the name.
@@ -22,8 +23,10 @@
 local _, ns = ...
 if not ns.isRetail then return end
 
-local M = ns:NewModule("UnitFrames")
-ns.UnitFrames = M
+local P = ns:NewModule("UnitFramesPlayer")
+local T = ns:NewModule("UnitFramesTarget")
+local F = ns:NewModule("UnitFramesFocus")
+ns.UnitFrames = { player = P, target = T, focus = F }
 
 ns.defaults.unitframes = {
     hideClassResources = false,
@@ -35,7 +38,7 @@ ns.defaults.unitframes = {
     hideFocusAuras = false,
 }
 
-local db
+local db = function() return ns.db.unitframes end
 
 ---------------------------------------------------------------------------
 -- Helpers
@@ -103,18 +106,20 @@ local FADE_RESOURCES = {
 }
 
 local function ApplyReparented(on) -- needs out of combat
-    local hide = on and db.hideClassResources
+    local d = db()
+    local hide = on and d.hideClassResources
     for i = 1, #REPARENT_RESOURCES do Reparent(REPARENT_RESOURCES[i](), hide) end
-    Reparent(TotemFrame, on and db.hideTotems)
+    Reparent(TotemFrame, on and d.hideTotems)
 end
 
 local function ApplyFaded(on)
-    local hide = on and db.hideClassResources
+    local d = db()
+    local hide = on and d.hideClassResources
     for i = 1, #FADE_RESOURCES do Fade(FADE_RESOURCES[i](), hide) end
 
     local main, ctx = PlayerMain(), PlayerContextual()
-    if main and main.HitIndicator then main.HitIndicator:SetAlpha((on and db.hideCombatText) and 0 or 1) end
-    if ctx and ctx.PlayerRestLoop then ctx.PlayerRestLoop:SetAlpha((on and db.hideRestZzz) and 0 or 1) end
+    if main and main.HitIndicator then main.HitIndicator:SetAlpha((on and d.hideCombatText) and 0 or 1) end
+    if ctx and ctx.PlayerRestLoop then ctx.PlayerRestLoop:SetAlpha((on and d.hideRestZzz) and 0 or 1) end
 end
 
 -- Resting glow: Blizzard colours StatusTexture yellow when resting (red in combat) and
@@ -130,7 +135,7 @@ local function OnUpdateStatus()
 end
 
 local function ApplyRestGlow(on)
-    restGlowActive = on and db.hideRestGlow or false
+    restGlowActive = on and db().hideRestGlow or false
     if restGlowActive and not restGlowHooked and PlayerFrame_UpdateStatus then
         restGlowHooked = true
         hooksecurefunc("PlayerFrame_UpdateStatus", OnUpdateStatus)
@@ -144,7 +149,7 @@ end
 local function ApplyTargetRep(on)
     local main = TargetFrame and TargetFrame.TargetFrameContent and TargetFrame.TargetFrameContent.TargetFrameContentMain
     local rep = main and main.ReputationColor
-    if rep then rep:SetAlpha((on and db.hideTargetRepColor) and 0 or 1) end
+    if rep then rep:SetAlpha((on and db().hideTargetRepColor) and 0 or 1) end
 end
 
 local focusActive, focusHooked = false, false
@@ -155,7 +160,7 @@ end
 
 local function ApplyFocusAuras(on)
     if not (FocusFrame and FocusFrame.GetAuraContainer) then return end
-    focusActive = on and db.hideFocusAuras or false
+    focusActive = on and db().hideFocusAuras or false
     if focusActive and not focusHooked then
         focusHooked = true
         hooksecurefunc(FocusFrame, "ConfigureAuraContainer", OnFocusConfigure)
@@ -168,21 +173,29 @@ local function ApplyFocusAuras(on)
 end
 
 ---------------------------------------------------------------------------
--- Apply
+-- Player module
 ---------------------------------------------------------------------------
-function M:OnCombatEnded()
+-- 0.17.0 had one "UnitFrames" module: carry its on/off state over to the three new ones.
+function P:OnInitialize()
+    local mods = ns.db.modules
+    if mods.UnitFrames ~= nil then
+        if mods.UnitFrames then
+            mods.UnitFramesPlayer, mods.UnitFramesTarget, mods.UnitFramesFocus = true, true, true
+        end
+        mods.UnitFrames = nil
+    end
+end
+
+function P:OnCombatEnded()
     ns:UnregisterEvent("PLAYER_REGEN_ENABLED", self)
     self:Apply()
 end
 
---- Bring everything in line with the current settings. Off = everything restored.
-function M:Apply()
-    db = ns.db.unitframes
+--- Bring the player frame in line with the settings. Off = everything restored.
+function P:Apply()
     local on = self.enabled
     ApplyFaded(on)
     ApplyRestGlow(on)
-    ApplyTargetRep(on)
-    ApplyFocusAuras(on)
     if InCombatLockdown() then
         ns:RegisterEvent("PLAYER_REGEN_ENABLED", self, self.OnCombatEnded)
     else
@@ -190,10 +203,19 @@ function M:Apply()
     end
 end
 
-function M:OnEnable()
-    self:Apply()
-end
+function P:OnEnable()  self:Apply() end
+function P:OnDisable() self:Apply() end
 
-function M:OnDisable()
-    self:Apply()
-end
+---------------------------------------------------------------------------
+-- Target module
+---------------------------------------------------------------------------
+function T:Apply() ApplyTargetRep(self.enabled) end
+function T:OnEnable()  self:Apply() end
+function T:OnDisable() self:Apply() end
+
+---------------------------------------------------------------------------
+-- Focus module
+---------------------------------------------------------------------------
+function F:Apply() ApplyFocusAuras(self.enabled) end
+function F:OnEnable()  self:Apply() end
+function F:OnDisable() self:Apply() end

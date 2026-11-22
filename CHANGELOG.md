@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.17.1]
+- Unit Frames split into three modules with their own sub-tab and switch: Player, Target, Focus. If Unit Frames was on, all three are turned on.
+
 ## [0.17.0]
 - New page Unit Frames (Retail only): hide class resources, totem frame, combat text, resting Zzz and resting glow on the player frame; hide the reputation colour on the target frame; hide buffs/debuffs on the focus frame.
 
