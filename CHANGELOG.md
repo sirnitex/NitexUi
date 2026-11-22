@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.17.0]
+- New page Unit Frames (Retail only): hide class resources, totem frame, combat text, resting Zzz and resting glow on the player frame; hide the reputation colour on the target frame; hide buffs/debuffs on the focus frame.
+
 ## [0.16.4]
 - Options reopen by themselves when combat ends, if they were open when combat started or you tried to open them during combat (same page). Toggling again during combat cancels it.
 
