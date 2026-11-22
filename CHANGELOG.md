@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.25.1]
+- Forever: Flight Timer removed (other addons such as InFlight already ship flight times).
+
 ## [0.25.0]
 - New page Forever (only on the Forever client), five modules, all off by default:
   - Flight Timer: a bar in Blizzard's cast bar style counts down while you fly, with the destination underneath. Each route is learned the first time you fly it; until then the bar shows the time so far. Flight time also shows when you hover a flight point on the taxi map. Test bar, Shift + drag, reset and "Forget learned routes".

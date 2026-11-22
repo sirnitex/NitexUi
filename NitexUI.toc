@@ -2,7 +2,7 @@
 ## Title: |cff33ccffNitex|rUI
 ## Notes: A lightweight UI addon for World of Warcraft Retail and Forever.
 ## Author: Nitex
-## Version: 0.25.0
+## Version: 0.25.1
 ## IconTexture: Interface\AddOns\NitexUI\Media\NitexUI-Icon
 ## SavedVariables: NitexUIDB
 ## SavedVariablesPerCharacter: NitexUICharDB
@@ -35,7 +35,6 @@ Modules\Nameplates\Colors.lua
 Modules\Nameplates\Border.lua
 Modules\DamageMeters.lua
 Modules\Forever\Shared.lua
-Modules\Forever\FlightTimer.lua
 Modules\Forever\Camping.lua
 Modules\Forever\Reminders.lua
 Modules\Forever\WeaponSkill.lua

@@ -20,33 +20,6 @@ end
 local ICON_SIZES = Numbers({ 24, 28, 32, 36, 40 })
 
 ---------------------------------------------------------------------------
--- Flight Timer
----------------------------------------------------------------------------
-local function BuildFlight(parent)
-    local M = ns.ForeverFlight
-    local function db() return ns.db.forever.flight end
-    local p = Options.NewPage(parent)
-    Options.ModuleToggle(p, "ForeverFlight", L["OPT_FLIGHT_ENABLE"], L["OPT_FLIGHT_ENABLE_DESC"])
-
-    p:Add(W.Header(p, L["SECTION_FLIGHT_BAR"]), 14)
-    Toggle(p, db, "unknown", "OPT_FLIGHT_UNKNOWN", "OPT_FLIGHT_UNKNOWN_DESC", nil, 10)
-    Toggle(p, db, "tooltip", "OPT_FLIGHT_TOOLTIP", "OPT_FLIGHT_TOOLTIP_DESC", nil, 6)
-
-    p:Add(W.Header(p, L["SECTION_POSITION"]), 16)
-    p:Add(W.Paragraph(p, L["FOREVER_MOVE_NOTE"]), 10)
-    p:Add(W.Button(p, L["OPT_FLIGHT_PREVIEW"], 160, function() M:Preview() end), 10)
-    p:Add(W.Button(p, L["OPT_RESET_POSITION"], 160, function() M:ResetPosition() end), 8)
-
-    p:Add(W.Header(p, L["SECTION_FLIGHT_DATA"]), 16)
-    p:Add(W.Paragraph(p, L["FLIGHT_DATA_NOTE"]), 10)
-    p:Add(W.Button(p, L["OPT_FLIGHT_FORGET"], 160, function()
-        M:ForgetTimes()
-        ns:Print(L["FLIGHT_FORGOT"])
-    end), 10)
-    return p
-end
-
----------------------------------------------------------------------------
 -- Camping
 ---------------------------------------------------------------------------
 local function BuildCamping(parent)
@@ -144,7 +117,6 @@ Options:RegisterPage{
     desc = L["PAGE_FOREVER_DESC"],
     order = 80,
     subtabs = {
-        { key = "flight",   label = L["SUB_FLIGHT"],   build = BuildFlight },
         { key = "camping",  label = L["SUB_CAMPING"],  build = BuildCamping },
         { key = "remind",   label = L["SUB_REMIND"],   build = BuildReminders },
         { key = "wskill",   label = L["SUB_WSKILL"],   build = BuildWeaponSkill },
