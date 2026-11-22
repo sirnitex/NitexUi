@@ -55,7 +55,7 @@ ns.defaults.nameplates.colors = {
         danger  = { enabled = true, color = C(0.95, 0.15, 0.15) }, -- tank: you lost aggro.   others: you have aggro
     },
     quest = { enabled = true, color = C(0.35, 0.75, 1.00) },
-    typesVersion = 3,
+    typesVersion = 4,
     types = { -- Classification colours
         worldboss = { enabled = true, color = C(0.82, 0.70, 0.05) },
         eliteboss = { enabled = true, color = C(0.85, 0.30, 0.65) },
@@ -63,8 +63,7 @@ ns.defaults.nameplates.colors = {
         rareelite = { enabled = true, color = C(0.00, 0.75, 0.60) },
         rare      = { enabled = true, color = C(0.30, 0.75, 0.00) },
         caster    = { enabled = true, color = C(0.00, 0.50, 0.80) },
-        enemy     = { enabled = true, color = C(0.80, 0.14, 0.14) }, -- elites without a tier
-        minienemy = { enabled = true, color = C(0.80, 0.14, 0.14) }, -- non-elite trash
+        enemy     = { enabled = true, color = C(0.80, 0.14, 0.14) }, -- every other enemy
         neutral   = { enabled = true, color = C(0.81, 0.72, 0.19) }, -- neutral, out of combat
     },
 }
@@ -72,16 +71,20 @@ ns.defaults.nameplates.colors = {
 -- Order + labels used by the options page (also the priority, first wins).
 -- Neutral is listed last but checked first: a neutral mob out of combat gets it; once it
 -- fights it uses the colours above like any enemy.
-M.typeOrder = { "worldboss", "eliteboss", "elitemini", "rareelite", "rare", "caster", "enemy", "minienemy", "neutral" }
+M.typeOrder = { "worldboss", "eliteboss", "elitemini", "rareelite", "rare", "caster", "enemy", "neutral" }
 M.threatOrder = { "good", "warning", "danger" }
 
 -- Profiles saved before 0.15.1 had other enemy types: replace them once with the new set.
+-- 0.15.3 merged Mini Enemy into Enemy.
 function M:OnInitialize()
     local c = ns.db.nameplates and ns.db.nameplates.colors
-    if c and c.typesVersion ~= 3 then
+    if not c then return end
+    if (c.typesVersion or 0) < 3 then
         c.types = CopyTable(ns.defaults.nameplates.colors.types)
-        c.typesVersion = 3
+    elseif c.typesVersion < 4 then
+        c.types.minienemy = nil
     end
+    c.typesVersion = 4
 end
 
 ---------------------------------------------------------------------------
@@ -152,7 +155,6 @@ local function Classify(unit)
         if Known(mana) and mana then return "caster" end
     end
 
-    if cls == "normal" or cls == "minus" or cls == "trivial" then return "minienemy" end
     return "enemy"
 end
 
@@ -342,4 +344,38 @@ function M:OnDisable()
     for unit in next, active do Detach(unit) end
     wipe(active)
     wipe(state) -- hooks left from this session now return on their first check
+end
+
+---------------------------------------------------------------------------
+-- /nitex np : what the module sees for your current target (for troubleshooting)
+---------------------------------------------------------------------------
+local function Show(v)
+    if v == nil then return "nil" end
+    if issecretvalue(v) then return "|cffff8800secret|r" end
+    return tostring(v)
+end
+
+function M:Debug()
+    local unit = "target"
+    local P = function(...) ns:Print(...) end
+    P("Nameplate colours: module", self.enabled and "ON" or "OFF")
+    if not UnitExists(unit) then P("No target.") return end
+    local plate = C_NamePlate.GetNamePlateForUnit(unit)
+    P("Blizzard plate:", plate and "yes" or "no (forbidden or none)")
+    local bar = GetHealthBar(plate)
+    P("Health bar:", bar and "yes" or "no", "| visible:", bar and Show(bar:IsVisible()) or "-")
+    local token = plate and (plate.namePlateUnitToken or (plate.UnitFrame and plate.UnitFrame.unit))
+    P("Token:", Show(token), "| tracked:", token and active[token] and "yes" or "no")
+    P("CanAttack:", Show(UnitCanAttack("player", unit)), "| Reaction:", Show(UnitReaction(unit, "player")),
+      "| IsEnemy:", Show(UnitIsEnemy(unit, "player")), "| InCombat:", Show(UnitAffectingCombat(unit)))
+    P("Classification:", Show(UnitClassification(unit)), "| Level:", Show(UnitEffectiveLevel(unit)),
+      "| Mana:", Show(MANA and UnitHasPowerType and UnitHasPowerType(unit, MANA)))
+    if self.enabled and db then
+        local c = Compute(unit)
+        P("Our colour:", c and ("%.2f %.2f %.2f"):format(c[1], c[2], c[3]) or "none (Blizzard's)")
+    end
+    if bar then
+        local r, g, b = bar:GetStatusBarColor()
+        P("Bar colour now:", Show(r), Show(g), Show(b))
+    end
 end

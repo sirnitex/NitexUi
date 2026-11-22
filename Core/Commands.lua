@@ -16,6 +16,7 @@ commands.help = function()
     print("  /nitex status - " .. L["HELP_STATUS"])
     print("  /nitex reset - " .. L["HELP_RESET"])
     print("  /nitex version - " .. L["HELP_VERSION"])
+    print("  /nitex np - " .. L["HELP_NP"])
 end
 
 commands.debug = function()
@@ -40,6 +41,10 @@ commands.status = function()
     end
     print(L["STATUS_EVENTS"])
     if ns:DumpEvents() == 0 then print("  " .. L["STATUS_NONE"]) end
+end
+
+commands.np = function()
+    if ns.NameplateColors then ns.NameplateColors:Debug() end
 end
 
 commands.version = function()

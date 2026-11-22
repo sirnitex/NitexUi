@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.15.3]
+- Mini Enemy colour removed: all ordinary enemies use the Enemy colour.
+- New /nitex np: prints what the nameplate colours see for your target (for troubleshooting).
+
 ## [0.15.2]
 - Classification Colors: new Neutral colour for neutral mobs out of combat (once they fight they use the enemy colours). UNIT_FLAGS/UNIT_FACTION now also watched on Retail so the colour switches when a neutral mob enters combat.
 
