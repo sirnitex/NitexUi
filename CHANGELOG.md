@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.22.3]
+- Damage Meters: snapping beside a window matches its height, snapping above or below matches its width. The other size is kept.
+
 ## [0.22.2]
 - Damage Meters: DPS/HPS under 1000 is shown as a whole number (121 instead of 120.81176470588).
 

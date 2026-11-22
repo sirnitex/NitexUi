@@ -1,8 +1,8 @@
 -- NitexUI: Damage Meters
 --
 -- Tweaks Blizzard's own damage meter (Blizzard_DamageMeter). No replacement meter.
---   * Snap windows: drop a window next to another one and it takes the same width and
---     height and lines up edge to edge (left, right, above or below).
+--   * Snap windows: drop a window next to another one and it lines up edge to edge.
+--     Beside it: same height. Above/below it: same width.
 --   * Hide rank: "1. Name" becomes "Name".
 --   * Short numbers: 1.5M instead of 1500K, via Blizzard's native AbbreviateNumbers
 --     (accepts secret values, so it also works in combat).
@@ -198,12 +198,13 @@ end
 ---------------------------------------------------------------------------
 -- Snapping
 ---------------------------------------------------------------------------
--- On drop: find the closest edge of another shown window within SNAP_DISTANCE, then take
--- that window's size and line up with it. All session windows share one parent (DamageMeter),
+-- On drop: find the closest edge of another shown window within SNAP_DISTANCE and line up
+-- with it. Side by side: same height (own width kept). Above/below: same width (own height kept). All session windows share one parent (DamageMeter),
 -- so their edges are in the same coordinate space.
 local function Snap(w)
     local l, r, t, b = w:GetLeft(), w:GetRight(), w:GetTop(), w:GetBottom()
     if not l then return end
+    local myW, myH = r - l, t - b
     local best, x, y, width, height = SNAP_DISTANCE
 
     for _, data in pairs(DamageMeter.windowDataList) do
@@ -212,17 +213,17 @@ local function Snap(w)
             local ol, or_, ot, ob = o:GetLeft(), o:GetRight(), o:GetTop(), o:GetBottom()
             if ol then
                 local ow, oh = or_ - ol, ot - ob
-                if t > ob and b < ot then -- side by side
+                if t > ob and b < ot then -- side by side: same height, same top
                     local d = abs(l - or_)
-                    if d < best then best, x, y, width, height = d, or_ + SNAP_GAP, ot, ow, oh end
+                    if d < best then best, x, y, width, height = d, or_ + SNAP_GAP, ot, myW, oh end
                     d = abs(r - ol)
-                    if d < best then best, x, y, width, height = d, ol - SNAP_GAP - ow, ot, ow, oh end
+                    if d < best then best, x, y, width, height = d, ol - SNAP_GAP - myW, ot, myW, oh end
                 end
-                if r > ol and l < or_ then -- stacked
+                if r > ol and l < or_ then -- stacked: same width, same left edge
                     local d = abs(t - ob)
-                    if d < best then best, x, y, width, height = d, ol, ob - SNAP_GAP, ow, oh end
+                    if d < best then best, x, y, width, height = d, ol, ob - SNAP_GAP, ow, myH end
                     d = abs(b - ot)
-                    if d < best then best, x, y, width, height = d, ol, ot + SNAP_GAP + oh, ow, oh end
+                    if d < best then best, x, y, width, height = d, ol, ot + SNAP_GAP + myH, ow, myH end
                 end
             end
         end
