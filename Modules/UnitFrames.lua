@@ -51,8 +51,12 @@ local function Reparent(frame, hide)
     if hide then
         if originalParent[frame] then return end
         if not hiddenParent then
-            hiddenParent = CreateFrame("Frame")
+            -- Blizzard's class bars look up their unit through the parent chain
+            -- (self:GetParent().unit and self:GetParent():GetParent().unit) and keep
+            -- updating while hidden, so the hidden parent needs a parent and a unit.
+            hiddenParent = CreateFrame("Frame", nil, UIParent)
             hiddenParent:Hide()
+            hiddenParent.unit = "player"
         end
         originalParent[frame] = frame:GetParent()
         frame:SetParent(hiddenParent)

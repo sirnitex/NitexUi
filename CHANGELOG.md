@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.18.1]
+- Unit Frames: fixed a Lua error from the Warlock soul shard bar (and other class bars) when entering or leaving combat while class resources were hidden.
+
 ## [0.18.0]
 - Options window font fixed: it always fell back to the client font (a font object's SetFont returns nothing, so the check failed). Expressway is now used.
 - Global Settings > Fonts no longer overrides the options window's own fonts, and Expressway can be chosen as the game font.
