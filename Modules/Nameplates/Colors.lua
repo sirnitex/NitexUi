@@ -9,9 +9,9 @@
 --   UnitThreatSituation("player", unit)        threat status 0-3 (type only, never the raw value)
 --   C_QuestLog.UnitIsRelatedToActiveQuest(unit) quest mob
 --   UnitIsQuestBoss(unit)                       quest kill target
---   UnitClassification(unit), UnitIsBossMob(),  classification:
---   UnitIsLieutenant(unit) (12.0+), UnitClassBase  worldboss / elite boss / elite mini /
---                                               rare elite / rare / caster ("Paladin" NPCs)
+--   UnitClassification, UnitEffectiveLevel,     classification (boss tiers by effective level
+--   UnitIsLieutenant (12.0+),                   vs. yours: skull / +2 = boss, lieutenant / +1 =
+--   UnitHasPowerType(unit, Mana)                mini-boss), caster = has a mana pool
 --
 -- Taint-safe design:
 --   * All API calls happen in OUR event handler. The colour is cached per health bar.
@@ -35,7 +35,8 @@ local UnitThreatSituation, UnitClassification, UnitCanAttack, UnitIsPlayer =
 local issecretvalue = issecretvalue or function() return false end
 local UnitIsRelatedToActiveQuest = C_QuestLog and C_QuestLog.UnitIsRelatedToActiveQuest
 local UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied = UnitIsQuestBoss, UnitIsBossMob, UnitIsTapDenied
-local UnitIsLieutenant, UnitClassBase, UnitLevel = UnitIsLieutenant, UnitClassBase, UnitLevel
+local UnitIsLieutenant, UnitEffectiveLevel, UnitHasPowerType = UnitIsLieutenant, UnitEffectiveLevel or UnitLevel, UnitHasPowerType
+local MANA = Enum and Enum.PowerType and Enum.PowerType.Mana
 
 ---------------------------------------------------------------------------
 -- Defaults
@@ -53,7 +54,7 @@ ns.defaults.nameplates.colors = {
         danger  = { enabled = true, color = C(0.95, 0.15, 0.15) }, -- tank: you lost aggro.   others: you have aggro
     },
     quest = { enabled = true, color = C(0.35, 0.75, 1.00) },
-    typesVersion = 2,
+    typesVersion = 3,
     types = { -- Classification colours
         worldboss = { enabled = true, color = C(0.82, 0.70, 0.05) },
         eliteboss = { enabled = true, color = C(0.85, 0.30, 0.65) },
@@ -61,20 +62,21 @@ ns.defaults.nameplates.colors = {
         rareelite = { enabled = true, color = C(0.00, 0.75, 0.60) },
         rare      = { enabled = true, color = C(0.30, 0.75, 0.00) },
         caster    = { enabled = true, color = C(0.00, 0.50, 0.80) },
+        enemy     = { enabled = true, color = C(0.80, 0.14, 0.14) }, -- elites without a tier
+        minienemy = { enabled = true, color = C(0.80, 0.14, 0.14) }, -- non-elite trash
     },
 }
 
 -- Order + labels used by the options page (also the priority, first wins).
-M.typeOrder = { "worldboss", "eliteboss", "elitemini", "rareelite", "rare", "caster" }
+M.typeOrder = { "worldboss", "eliteboss", "elitemini", "rareelite", "rare", "caster", "enemy", "minienemy" }
 M.threatOrder = { "good", "warning", "danger" }
 
--- Profiles saved before 0.15 had other enemy types (boss/elite/normal/trivial):
--- replace them once with the new classification set.
+-- Profiles saved before 0.15.1 had other enemy types: replace them once with the new set.
 function M:OnInitialize()
     local c = ns.db.nameplates and ns.db.nameplates.colors
-    if c and c.typesVersion ~= 2 then
+    if c and c.typesVersion ~= 3 then
         c.types = CopyTable(ns.defaults.nameplates.colors.types)
-        c.typesVersion = 2
+        c.typesVersion = 3
     end
 end
 
@@ -115,32 +117,39 @@ end
 
 local function Known(v) return v ~= nil and not issecretvalue(v) end
 
+-- Boss tiers come from the mob's effective level compared to yours (handles level scaling
+-- and Chromie Time): a skull (-1) or 2+ levels above = boss, 1 above or a lieutenant = mini-boss.
+local function BossTier(unit, cls)
+    if cls ~= "elite" and cls ~= "rareelite" and cls ~= "worldboss" then return nil end
+    local lvl, my = UnitEffectiveLevel(unit), UnitEffectiveLevel("player")
+    if not (Known(lvl) and Known(my)) then return nil end
+    local skull = lvl == -1
+    if not (skull or lvl >= my + 1) then return nil end
+    local lieutenant = not skull and UnitIsLieutenant and UnitIsLieutenant(unit)
+    if Known(lieutenant) and lieutenant then return "elitemini" end
+    if skull or lvl >= my + 2 then return "eliteboss" end
+    return "elitemini"
+end
+
 local function Classify(unit)
     local cls = UnitClassification(unit)
-    if not Known(cls) then cls = nil end
+    if not Known(cls) then return nil end
     if cls == "worldboss" then return "worldboss" end
 
-    local boss = UnitIsBossMob and UnitIsBossMob(unit)
-    if Known(boss) and boss then return "eliteboss" end
-
-    local mini
-    if UnitIsLieutenant then
-        mini = UnitIsLieutenant(unit)
-        mini = Known(mini) and mini
-    elseif cls == "elite" then
-        -- Client without UnitIsLieutenant: an elite above your level is a mini-boss.
-        local lvl, my = UnitLevel(unit), UnitLevel("player")
-        mini = Known(lvl) and Known(my) and lvl > my
-    end
-    if mini then return "elitemini" end
+    local tier = BossTier(unit, cls)
+    if tier then return tier end
 
     if cls == "rareelite" then return "rareelite" end
     if cls == "rare" then return "rare" end
 
-    -- Blizzard marks caster NPCs with the Paladin class.
-    local class = UnitClassBase and UnitClassBase(unit)
-    if Known(class) and class == "PALADIN" then return "caster" end
-    return nil
+    -- Caster = the mob has a mana pool.
+    if MANA and UnitHasPowerType then
+        local mana = UnitHasPowerType(unit, MANA)
+        if Known(mana) and mana then return "caster" end
+    end
+
+    if cls == "normal" or cls == "minus" or cls == "trivial" then return "minienemy" end
+    return "enemy"
 end
 
 local function Compute(unit)

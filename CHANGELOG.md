@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.15.1]
+- Classification Colors reworked (same idea as EllesmereUI): caster = mob with a mana pool; Elite Boss / Elite Mini by effective level vs. yours (skull or +2 = boss, lieutenant or +1 = mini-boss). New Enemy and Mini Enemy colours so ordinary mobs are coloured again. Saved type colours are reset once.
+
 ## [0.15.0]
 - Nameplates > Health Colors: enemy types replaced by Classification Colors: Worldboss, Elite Boss, Elite Mini (UnitIsLieutenant), Rare Elite, Rare, Caster (Paladin-class NPCs). Old type colours in saved profiles are replaced once with the new defaults.
 
