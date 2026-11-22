@@ -15,8 +15,13 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 - Addonet skal virke på både Retail (Midnight, Interface 120105) og WoW Forever (Interface 16001). Begge bruker Mainline-API-et og "secret values".
 - Én `.toc` med `## Interface: 120105, 16001`. Oppdater begge tallene ved nye patcher.
 - Bruk `ns.isRetail` / `ns.isForever` bare der klientene faktisk er ulike. Guard API-er som kanskje mangler i én klient (`if C_X and C_X.Func then`).
-- Hver endring synkes til begge AddOns-mappene: `G:\World of Warcraft\_retail_\Interface\AddOns\NitexUI` og `G:\World of Warcraft\_forever_\Interface\AddOns\NitexUI`.
-- Ved synk: legg filene i en NY staging-mappe hver gang (aldri gjenbruk en gammel), og kontroller etterpå med `device_list_dir` at filstørrelsene på disken er like de i repoet. En overføring kan melde "written" og likevel ha skrevet en gammel kopi.
+- Retail-only modul: `if not ns.isRetail then return end` øverst i modulfilen (før `ns:NewModule`), og legg sub-taben bare til når `ns.isRetail` (se `Options/Pages/Nameplates.lua`). Retail-only valg i en felles modul: vis en forklarende tekst på Forever i stedet for bryterne.
+
+## 1b-2. Synk til spillet (hver oppgave)
+- AddOns-mappene: `G:\World of Warcraft\_retail_\Interface\AddOns\NitexUI` og `G:\World of Warcraft\_forever_\Interface\AddOns\NitexUI`. Be om tilgang med `device_request_folder_access` (begge i ett kall) hvis de ikke er koblet til.
+- Fremgangsmåte: commit + push til `main` → kopier de endrede filene til en NY mappe `/mnt/user-data/outputs/sync-<tidsstempel>/` (samme relative stier) → `device_commit_files` med `force: true` til begge mappene → kontroller med `device_list_dir` (recursive) at filstørrelsene på disken er like de i repoet.
+- Filer kan ikke slettes fra AddOns-mappene herfra (ingen delete-verktøy). Gamle filer som ikke står i `.toc` er ufarlige; be eieren slette dem selv. Kjent: `Modules/Example.lua` ligger igjen i begge mappene.
+- Oppdater versjon i `NitexUI.toc` + ny seksjon øverst i `CHANGELOG.md` for hver levering. Hold `CLAUDE.md` (og prosjekt-dokumentet `claude/arbeidsregler.md`) oppdatert når sider/moduler endres.
 
 ## 1c. Moduler
 - Alle funksjoner er egne moduler (`ns:NewModule`). **Alle moduler er AV som standard** – brukeren skrur på bare det de trenger.
@@ -29,21 +34,40 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 - Implementer `OnDisable` slik at modulen kan slås av uten reload der det er mulig. Si fra når en endring krever reload.
 
 ## 1d. Arkitektur (les dette før du endrer noe)
-- Repo: `sirnitex/NitexUi` (GitHub, branch `main`). Lokalt testes det i AddOns-mappene (se 1b). Nyeste versjon står i `NitexUI.toc` og `CHANGELOG.md`.
-- Lasterekkefølge i `.toc`: Locales → Core (Init, Theme, Pixel, Utils, Database, Commands) → Modules → Options (Widgets, Panel, Pages/*).
-- `Core/Init.lua`: namespace `ns`, felles event-system `ns:RegisterEvent(event, owner, func)`, modulsystem (`ns:NewModule`, `ns:SetModuleEnabled`, `OnEnable`/`OnDisable`).
-- `Core/Database.lua`: profiler i ElvUI/AceDB-stil, native. `ns.db` = aktiv profil. `profileKeys` per karakter, `defaultProfile` for alle andre. Import/eksport `!NUI1!` via `C_EncodingUtil`. Bytte/kopiere/nullstille profil = `ReloadUI()`.
-- Standardverdier: hver modul legger til `ns.defaults.<navn> = {...}` i sin egen fil.
-- `Options/Panel.lua`: vinduet (`/nitex`). Sider registreres med `Options:RegisterPage{ key, label, order, desc, build | subtabs = {...} }`. Hjelpere: `Options.NewPage`, `page:Add(widget, gap, keepWidth)`, `Options.Columns` / `Options.EndColumns`, `Options.ModuleToggle`. Sidebygging er pakket i `SafeBuild` (feil skrives i chat).
-- `Options/Widgets.lua`: `W.Header`, `W.Paragraph`, `W.Button`, `W.Toggle`, `W.Dropdown` (items kan være funksjon), `W.ColorRow`, `W.EditBox`, `W.Tab`, `W.SubTab`. Alle bruker `ns.PP`.
-- Sider: General (General, Profiles) · Global Settings (Fonts) · Interface (General, Minimap, Character Panel) · Quality of Life (General) · Nameplates (Health Colors, Border) · About.
-- Moduler: `MinimapButton`, `Fonts`, `InterfaceGeneral`, `InterfaceMinimap`, `CharacterPanel`, `QualityOfLife`, `NameplateColors`, `NameplateBorder`. Mal: `Modules/_Template.lua`.
-- Kjente fallgruver: mål aldri tekst før den har bredde (gi FontString eksplisitt `SetWidth`); gjør aldri aritmetikk på verdier som kan være hemmelige (`issecretvalue`); `PP.Point` med samme punktnavn erstatter ankeret.
+- Repo: `sirnitex/NitexUi` (GitHub, branch `main`). Nyeste versjon står i `NitexUI.toc` og `CHANGELOG.md`.
+- Lasterekkefølge i `.toc`: Locales → Core (Init, Theme, Pixel, Utils, Database, Commands) → Modules → Options (Widgets, Panel, Pages/*). Nye filer må legges inn i `.toc`.
+- `Core/Init.lua`: namespace `ns`, felles event-system `ns:RegisterEvent(event, owner, func)` (handler får `(owner, event, ...)`), modulsystem (`ns:NewModule`, `ns:SetModuleEnabled`, `OnInitialize`/`OnEnable`/`OnDisable`).
+- `Core/Database.lua`: profiler i ElvUI/AceDB-stil, native. `ns.db` = aktiv profil. `ns.CopyDefaults` fyller inn manglende nøkler fra `ns.defaults` (sletter aldri gamle). Endres strukturen på lagrede data: lag migrering i modulens `OnInitialize` med et versjonsfelt (eksempel: `typesVersion` i `Modules/Nameplates/Colors.lua`). Import/eksport `!NUI1!` via `C_EncodingUtil`.
+- Standardverdier: hver modul legger til `ns.defaults.<navn> = {...}` i sin egen fil. Brytere inne i en modul kan godt stå på som standard; selve modulen er alltid AV.
+- `Core/Commands.lua`: `/nitex` (eller `/nui`) + `status`, `debug`, `reset`, `version`, `np` (viser hva nameplate-fargene ser for target – bruk den til feilsøking i stedet for å gjette).
+- `Options/Panel.lua`: vinduet. Sider: `Options:RegisterPage{ key, label, order, desc, build | subtabs = {...} }`. Hjelpere: `Options.NewPage`, `page:Add(widget, gap, keepWidth)`, `Options.Columns` / `Options.EndColumns`, `Options.ModuleToggle`. Sidebygging er pakket i `SafeBuild` (feil skrives i chat).
+  - Sub-sider ligger i en ScrollFrame (musehjul, tynn indikator). Høyden måles fra toppen til `page.cursor` når siden vises, så alt må legges til via `page:Add` / `EndColumns` for at scroll skal stemme.
+  - Vinduet er ikke tilgjengelig i kamp: lukkes på `PLAYER_REGEN_DISABLED` og åpnes igjen etter kamp hvis det var åpent eller noen prøvde å åpne det (eventene er bare registrert når det trengs).
+  - Rekkefølge (order): General 10 · Global Settings 20 · Interface 30 · Quality of Life 35 · Nameplates 40 · About 90.
+- `Options/Widgets.lua`: `W.Header`, `W.Paragraph`, `W.Button`, `W.Toggle`, `W.Dropdown` (items kan være funksjon; åpen liste flyttes til vinduet så den ikke klippes, `W.CloseDropdown()`), `W.ColorRow` (getEnabled kan være nil = bare fargeknapp), `W.EditBox`, `W.Tab`, `W.SubTab`. Alle bruker `ns.PP`.
+- Sider og moduler (modulnavn i parentes):
+  - General (General, Profiles) – minimap-knappen (`MinimapButton`).
+  - Global Settings: Fonts (`Fonts`).
+  - Interface: General – skjul bag-bar/mikromeny (`InterfaceGeneral`) · Minimap – knapper kun ved mouseover, via alpha og OnEnter/OnLeave-hooks (`InterfaceMinimap`) · Character Panel – ilvl/enchant/gems i Blizzards karaktervindu via `C_Item` + `C_TooltipInfo`, oppdateres bare mens vinduet er åpent (`CharacterPanel`).
+  - Quality of Life: General (`QualityOfLife`) – skjul talking head (alpha 0, stemmen spilles), feilmeldinger, sonetekst; selg junk; reparer (guild først); Retail: rask påmelding i group finder (Shift = vanlig dialog), godta invitasjoner (venner/guild eller alle).
+  - Nameplates: Health Colors (`NameplateColors`) · Border, kun Retail (`NameplateBorder`).
+- Mal for nye moduler: `Modules/_Template.lua`.
+- Kjente fallgruver: mål aldri tekst før den har bredde (gi FontString eksplisitt `SetWidth`); gjør aldri aritmetikk/sammenligning på verdier som kan være hemmelige (`issecretvalue` først); `PP.Point` med samme punktnavn erstatter ankeret; hooks (`hooksecurefunc`/`HookScript`) kan ikke fjernes – la dem returnere med en gang når modulen er av, og si fra om det.
+
+## 1d-2. Nameplates (Midnight) – det vi vet
+- Vi endrer bare Blizzards egne nameplates. Struktur: `plate.UnitFrame.HealthBarsContainer.healthBar`. Hent plate med `C_NamePlate.GetNamePlateForUnit(unit)` (gir ikke forbidden-plater). Rør aldri `IsForbidden()`-rammer.
+- Forbidden/låste plater (vennlige i instanser, og mobs som ikke kan angripes) kan ingen addon endre. Det er forventet, ikke en feil.
+- Farge: cache farge per bar og mal den på nytt fra en `hooksecurefunc(bar, "SetStatusBarColor", ...)` som ikke kaller API-er. Klassifisering (samme logikk som EllesmereUI): worldboss → elite boss (skalle eller ≥ +2 effektive nivåer, ikke lieutenant) → elite mini (`UnitIsLieutenant` eller +1) → rare elite → rare → caster (`UnitHasPowerType(unit, Enum.PowerType.Mana)`) → enemy. Nøytral (reaction 4 / angripbar men ikke fiendtlig) får egen farge utenfor kamp. Prioritet: tapped (Forever) > threat > quest > nøytral > klassifisering.
+- Kant: Blizzard-kunst som må skjules for en ren 1px-kant: `healthBar.bgTexture`, `healthBar.selectedBorder`, `healthBar.deselectedOverlay`, `HealthBarsContainer.border` (alpha 0) og `healthBar.MaskTexture` (Hide – myk avrundet maske). Flatt fyll (`WHITE8X8`) mens på, original atlas/fil lagres og settes tilbake. Linjene festes til `healthBar`, tykkelse = 1 fysisk piksel ved platens skala (måles ved NAME_PLATE_UNIT_ADDED og target-bytte); Blizzards texture-snapping står PÅ her fordi plate-skalaen endres med avstand.
+- Referanser (kun til å lese logikk, aldri kopiere kode – EllesmereUI er "all rights reserved"): `EllesmereGaming/EllesmereUI` (`EllesmereUINameplates/EUI_Nameplates_Colors.lua`) og `Bodify/BetterBlizzPlates` (`retail/BetterBlizzPlates.lua`). Kan klones lesbart med `git clone --depth 1`.
 
 ## 1e. Spar bruk
 - Pakk flere endringer i én runde. Synk til AddOns-mappene én gang per oppgave, ikke per liten rettelse.
 - Sjekk layout og fallgruvene i 1d før noe sendes til test, så vi slipper feilsøkingsrunder.
+- Når eieren sier "gjør som EllesmereUI" eller noe ikke virker: les referansekoden / bruk `/nitex np`-lignende feilsøking før du gjetter.
 - Korte svar. Les bare filene som trengs.
+- Ingen Lua-tolk i arbeidsmiljøet: les gjennom endret kode nøye før levering.
+- Ved skripting av filendringer: les filen FØR den åpnes for skriving (å åpne med "w" tømmer den – det har ødelagt locale-filene én gang). Sjekk filstørrelser etterpå.
 
 ## 2. Lua-versjon
 - Kun Lua 5.1, slik WoW-klienten bruker. Ingen `goto`, ingen heltallsdivisjon `//`, ingen bit-operatorer `& | ~` (bruk `bit.band` osv.), ingen `table.unpack` (bruk `unpack`).
@@ -58,6 +82,7 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 ## 4. Minst mulig egen matte og automasjon
 - Ingen egne beregninger når API-et kan gi svaret.
 - Ingen automatisering som spillet ikke selv legger opp til.
+- Unntak eieren har bedt om (Quality of Life): selg junk, reparer, godta gruppeinvitasjoner, rask påmelding i group finder. Bruk Blizzards egne funksjoner for dem.
 
 ## 5. Pixel perfect på alle UI scales
 - Alle 1px borders, linjer og outlines skal være nøyaktig én fysisk skjermpiksel, skarpe, på enhver UI scale og oppløsning.
@@ -66,6 +91,7 @@ Disse reglene gjelder for alt arbeid på dette addonet. De er satt av eieren og 
 - Rammer med border/fyll ankres i hjørner (TOPLEFT/TOPRIGHT osv.), ikke CENTER/LEFT/RIGHT, som kan havne på halve piksler.
 - Ank aldri layout til en FontString (høyden er ikke hele piksler). Bruk rammer med fast høyde.
 - Omberegning skjer kun på `UI_SCALE_CHANGED` / `DISPLAY_SIZE_CHANGED`, aldri per frame.
+- Unntak: nameplates endrer skala med avstand. Der beholdes Blizzards texture-snapping, og tykkelsen måles når platen dukker opp / target byttes (se 1d-2). Ikke OnUpdate.
 
 ## 6. Varsle før noe FPS-tungt
 - **Hvis eieren ber om noe som krever egen matte, hyppige oppdateringer, OnUpdate, mange frames eller annet som kan koste FPS: si fra FØR det bygges.** Forklar kostnaden kort, og foreslå et lettere alternativ hvis det finnes. Vent på svar før du implementerer.
