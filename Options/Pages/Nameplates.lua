@@ -26,6 +26,9 @@ local function BuildColors(parent)
     left:Add(W.Toggle(p, L["OPT_THREAT_GROUPONLY"], nil,
         function() return db.threat.groupOnly end,
         function(v) db.threat.groupOnly = v; Changed() end), 2)
+    left:Add(W.Toggle(p, L["OPT_THREAT_PERCENT"], L["OPT_THREAT_PERCENT_DESC"],
+        function() return db.threat.percent end,
+        function(v) db.threat.percent = v; Changed() end), 2)
     for i = 1, #M.threatOrder do
         local key = M.threatOrder[i]
         local entry = db.threat[key]

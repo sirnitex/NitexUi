@@ -23,7 +23,7 @@
 -- Cost while ON: a few API calls per nameplate when it appears, when its threat list
 -- changes, or when your quests/role change. Events are only registered for colours that are
 -- on: UNIT_FLAGS/UNIT_FACTION for Neutral (or, on Forever, Tapped), UNIT_THREAT_LIST_UPDATE/
--- GROUP_ROSTER_UPDATE for Threat, QUEST_LOG_UPDATE for Quest (bursts merged, 0.2 s).
+-- GROUP_ROSTER_UPDATE for Threat / Threat %, QUEST_LOG_UPDATE for Quest (bursts merged, 0.2 s).
 -- GROUP_ROSTER_UPDATE only repaints when you join or leave a group. Nothing per frame.
 -- When OFF: no events. Hooks cannot be removed in WoW, so a bar hooked earlier this session
 -- returns immediately on its first line until you /reload.
@@ -41,6 +41,7 @@ local UnitIsQuestBoss, UnitIsTapDenied, IsInGroup = UnitIsQuestBoss, UnitIsTapDe
 local UnitIsLieutenant, UnitEffectiveLevel, UnitHasPowerType = UnitIsLieutenant, UnitEffectiveLevel or UnitLevel, UnitHasPowerType
 local MANA = Enum and Enum.PowerType and Enum.PowerType.Mana
 local UnitReaction, UnitIsEnemy, UnitAffectingCombat = UnitReaction, UnitIsEnemy, UnitAffectingCombat
+local UnitDetailedThreatSituation = UnitDetailedThreatSituation
 
 ---------------------------------------------------------------------------
 -- Defaults
@@ -53,6 +54,7 @@ ns.defaults.nameplates.colors = {
     threat = {
         enabled = true,
         groupOnly = true,
+        percent = false, -- "| 100%" beside the name (your scaled threat on that mob)
         good    = { enabled = true, color = C(0.20, 0.80, 0.30) }, -- tank: you hold aggro.   others: (not used)
         warning = { enabled = true, color = C(1.00, 0.60, 0.10) }, -- aggro is about to change
         danger  = { enabled = true, color = C(0.95, 0.15, 0.15) }, -- tank: you lost aggro.   others: you have aggro
@@ -253,6 +255,43 @@ local function GetHealthBar(plate)
     return uf.healthBar or (uf.HealthBarsContainer and uf.HealthBarsContainer.healthBar)
 end
 
+-- Threat % beside the name: Blizzard's own scaled percentage (100 = you have aggro).
+-- Only text is set; a secret percentage is handed straight to SetFormattedText, never compared.
+local function GetPercentText(s)
+    local fs = s.pct
+    if fs then return fs end
+    local uf = s.uf
+    local name = uf and uf.name
+    if not name then return nil end
+    fs = uf:CreateFontString(nil, "OVERLAY")
+    local obj = name:GetFontObject()
+    if obj then fs:SetFontObject(obj) else fs:SetFont(name:GetFont()) end
+    fs:SetPoint("LEFT", name, "RIGHT", 2, 0)
+    s.pct = fs
+    return fs
+end
+
+local function UpdatePercent(unit)
+    local bar = active[unit]
+    if not bar then return end
+    local s = state[bar]
+    local t = db.threat
+    local pct
+    if t.percent and (not t.groupOnly or inGroup) then
+        local _, _, p = UnitDetailedThreatSituation("player", unit)
+        pct = p
+    end
+    if issecretvalue(pct) or pct then
+        local fs = GetPercentText(s)
+        if fs then
+            fs:SetFormattedText("|| %.0f%%", pct) -- "||" = a literal "|" in WoW text
+            fs:Show()
+        end
+    elseif s.pct then
+        s.pct:Hide()
+    end
+end
+
 local function Update(unit, force)
     local bar = active[unit]
     if not bar then return end
@@ -264,7 +303,7 @@ local function Update(unit, force)
 end
 
 local function UpdateAll(force)
-    for unit in next, active do Update(unit, force) end
+    for unit in next, active do Update(unit, force); UpdatePercent(unit) end
 end
 
 local function Attach(unit)
@@ -282,9 +321,11 @@ local function Attach(unit)
         hooked[bar] = true
         hooksecurefunc(bar, "SetStatusBarColor", OnSetStatusBarColor)
     end
+    s.uf = plate.UnitFrame
     s.color = nil
     active[unit] = bar
     Update(unit, true)
+    UpdatePercent(unit)
 end
 
 local function Detach(unit)
@@ -292,6 +333,7 @@ local function Detach(unit)
     if not bar then return end
     active[unit] = nil
     local s = state[bar]
+    if s.pct then s.pct:Hide() end
     if s.color then
         s.color = nil
         RestoreBlizzard(bar, s)
@@ -303,7 +345,7 @@ end
 ---------------------------------------------------------------------------
 function M:NAME_PLATE_UNIT_ADDED(_, unit)   Attach(unit) end
 function M:NAME_PLATE_UNIT_REMOVED(_, unit) Detach(unit) end
-function M:UNIT_THREAT_LIST_UPDATE(_, unit) if active[unit] then Update(unit) end end
+function M:UNIT_THREAT_LIST_UPDATE(_, unit) if active[unit] then Update(unit); UpdatePercent(unit) end end
 function M:UNIT_CLASSIFICATION_CHANGED(_, unit) if active[unit] then Update(unit) end end
 function M:UnitChanged(_, unit) if active[unit] then Update(unit) end end
 -- QUEST_LOG_UPDATE comes in bursts (several per quest objective): one repaint per burst.
@@ -342,7 +384,7 @@ local OPTIONAL = {
     { on = false, events = { UNIT_FACTION = "UnitChanged", UNIT_FLAGS = "UnitChanged" },
       want = function() return (db.types.neutral and db.types.neutral.enabled) or (ns.isForever and db.tapped.enabled) end },
     { on = false, events = { UNIT_THREAT_LIST_UPDATE = "UNIT_THREAT_LIST_UPDATE", GROUP_ROSTER_UPDATE = "GROUP_ROSTER_UPDATE" },
-      want = function() return db.threat.enabled end },
+      want = function() return db.threat.enabled or db.threat.percent end },
     { on = false, events = { QUEST_LOG_UPDATE = "QUEST_LOG_UPDATE" },
       want = function() return db.quest.enabled end },
 }

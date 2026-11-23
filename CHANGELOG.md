@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.26.0]
+- Nameplates > Health Colors: new option "Show threat % by the name" (off by default). Shows "| 100%" after the name; 100% = you have aggro. Updates on Blizzard's threat events only, follows "Only in groups".
+
 ## [0.25.3]
 - Performance pass (no visible changes):
   - Nameplates > Health Colors: threat and quest events are only registered while those colours are on. Quest log bursts cause one repaint instead of many; raid roster changes only repaint when you join or leave a group.
