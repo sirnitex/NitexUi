@@ -45,7 +45,6 @@ local UnitDetailedThreatSituation = UnitDetailedThreatSituation
 local UnitGroupRolesAssigned, UnitIsUnit, IsInRaid, GetNumGroupMembers, type =
       UnitGroupRolesAssigned, UnitIsUnit, IsInRaid, GetNumGroupMembers, type
 local EvalBool = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean
-local CreateColorCurve = C_CurveUtil and C_CurveUtil.CreateColorCurve
 
 ---------------------------------------------------------------------------
 -- Defaults
@@ -59,7 +58,6 @@ ns.defaults.nameplates.colors = {
         enabled = true,
         groupOnly = true,
         percent = false, -- "| 100%" right after the mob name (your scaled threat on that mob)
-        percentColor = true, -- colour the number green..red (only when the value is not secret)
         good    = { enabled = true, color = C(0.20, 0.80, 0.30) }, -- tank: you hold aggro.   others: (not used)
         warning = { enabled = true, color = C(1.00, 0.60, 0.10) }, -- aggro is about to change
         danger  = { enabled = true, color = C(0.95, 0.15, 0.15) }, -- tank: you lost aggro.   others: you have aggro
@@ -336,27 +334,7 @@ local function GetHealthBar(plate)
 end
 
 -- Threat % right after the mob name, same font and size as the name: "| 100%".
--- Number colour: 100 green, 66 yellow, 33 orange, 0 red (Blizzard's ColorCurve, built once).
--- Addon code may not evaluate a curve with a secret value: a secret percentage is shown
--- uncoloured, handed straight to SetFormattedText and never compared.
-local pctCurve
-local function GetCurve()
-    if pctCurve ~= nil then return pctCurve end
-    pctCurve = false
-    if CreateColorCurve and CreateColor then
-        local c = CreateColorCurve()
-        if c and c.AddPoint and c.EvaluateUnpacked then
-            if c.SetType and Enum.LuaCurveType then c:SetType(Enum.LuaCurveType.Linear) end
-            c:AddPoint(0,    CreateColor(0.95, 0.15, 0.15))
-            c:AddPoint(0.33, CreateColor(1.00, 0.50, 0.10))
-            c:AddPoint(0.66, CreateColor(1.00, 0.85, 0.15))
-            c:AddPoint(1,    CreateColor(0.20, 0.80, 0.30))
-            pctCurve = c
-        end
-    end
-    return pctCurve
-end
-
+-- The percentage is secret in Retail: handed straight to SetFormattedText, never compared.
 local function GetPercentText(s)
     local fs = s.pct
     if fs then return fs end
@@ -412,24 +390,11 @@ local function UpdatePercent(unit)
         local _, _, p = UnitDetailedThreatSituation("player", unit)
         pct = p
     end
-    if issecretvalue(pct) then
+    if issecretvalue(pct) or pct then
         local fs = GetPercentText(s)
         if fs then
             FollowName(s, fs)
             fs:SetFormattedText("|| %.0f%%", pct) -- "||" = a literal "|" in WoW text
-            fs:Show()
-        end
-    elseif pct then
-        local fs = GetPercentText(s)
-        if fs then
-            FollowName(s, fs)
-            local curve = t.percentColor and GetCurve()
-            if curve then
-                local r, g, b = curve:EvaluateUnpacked(pct / 100)
-                fs:SetFormattedText("|| |cff%02x%02x%02x%.0f%%|r", r * 255, g * 255, b * 255, pct)
-            else
-                fs:SetFormattedText("|| %.0f%%", pct)
-            end
             fs:Show()
         end
     elseif s.pct then

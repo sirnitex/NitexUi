@@ -74,10 +74,6 @@ local function BuildColors(parent)
     p:Add(W.Toggle(p, L["OPT_THREAT_PERCENT"], L["OPT_THREAT_PERCENT_DESC"],
         function() return t.percent end,
         function(v) t.percent = v; Changed() end), 8)
-    p:Add(W.Toggle(p, L["OPT_THREAT_PCT_COLOR"], L["OPT_THREAT_PCT_COLOR_DESC"],
-        function() return t.percentColor end,
-        function(v) t.percentColor = v; Changed() end), 2)
-    p:Add(W.Paragraph(p, L["THREAT_PCT_NOTE"]), 10)
     return p
 end
 

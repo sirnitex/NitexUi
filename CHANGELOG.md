@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.28.3]
+- Nameplates: removed "Colour the number" for threat %. The game keeps the percentage secret, and addons are not allowed to colour a secret number.
+
 ## [0.28.2]
 - Nameplates > Health Colors: threat % has its own section at the bottom of the page.
 - Threat % sits right where the mob name ends, in the same font and size as the name ("| 100%").
