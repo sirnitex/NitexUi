@@ -110,30 +110,7 @@ end
 ---------------------------------------------------------------------------
 -- Sub-tab: Databars
 ---------------------------------------------------------------------------
--- Number box: type a whole number, Enter (or leaving the box) applies it, clamped to min..max.
-local function NumberBox(p, label, getter, setter, minV, maxV)
-    local f = W.EditBox(p, label, 160)
-    local box = f.box
-    box:SetNumeric(true)
-    box:SetMaxLetters(5)
-    local function Show() box:SetText(tostring(getter())) end
-    local function Commit()
-        local v = tonumber(box:GetText())
-        if v then
-            local hi = type(maxV) == "function" and maxV() or maxV
-            v = math.floor(v)
-            if v < minV then v = minV elseif v > hi then v = hi end
-            if v ~= getter() then setter(v) end
-        end
-        Show()
-    end
-    box:HookScript("OnEnterPressed", Commit)
-    box:HookScript("OnEditFocusLost", Commit)
-    box:SetScript("OnEscapePressed", function(self) Show(); self:ClearFocus() end) -- Esc = undo
-    f.Refresh = Show
-    Show()
-    return f
-end
+local NumberBox = W.NumberBox
 
 local DB_FONTSIZES = {
     { value = 9, text = "9" }, { value = 10, text = "10" }, { value = 11, text = "11" },

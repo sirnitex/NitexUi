@@ -26,9 +26,6 @@ local function BuildColors(parent)
     left:Add(W.Toggle(p, L["OPT_THREAT_GROUPONLY"], nil,
         function() return db.threat.groupOnly end,
         function(v) db.threat.groupOnly = v; Changed() end), 2)
-    left:Add(W.Toggle(p, L["OPT_THREAT_PERCENT"], L["OPT_THREAT_PERCENT_DESC"],
-        function() return db.threat.percent end,
-        function(v) db.threat.percent = v; Changed() end), 2)
     for i = 1, #M.threatOrder do
         local key = M.threatOrder[i]
         local entry = db.threat[key]
@@ -70,6 +67,17 @@ local function BuildColors(parent)
 
     Options.EndColumns(p, left, right)
     p:Add(W.Paragraph(p, ns.isForever and L["NPCOLORS_NOTE_FOREVER"] or L["NPCOLORS_NOTE"]), 18)
+
+    -- Threat % (own section, below everything else)
+    local t = db.threat
+    p:Add(W.Header(p, L["SECTION_THREAT_PERCENT"]), 18)
+    p:Add(W.Toggle(p, L["OPT_THREAT_PERCENT"], L["OPT_THREAT_PERCENT_DESC"],
+        function() return t.percent end,
+        function(v) t.percent = v; Changed() end), 8)
+    p:Add(W.Toggle(p, L["OPT_THREAT_PCT_COLOR"], L["OPT_THREAT_PCT_COLOR_DESC"],
+        function() return t.percentColor end,
+        function(v) t.percentColor = v; Changed() end), 2)
+    p:Add(W.Paragraph(p, L["THREAT_PCT_NOTE"]), 10)
     return p
 end
 

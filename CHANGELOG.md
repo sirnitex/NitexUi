@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.28.2]
+- Nameplates > Health Colors: threat % has its own section at the bottom of the page.
+- Threat % sits right where the mob name ends, in the same font and size as the name ("| 100%").
+- New option "Colour the number": green at 100%, then yellow and orange, red at 0%. Values the game keeps secret are shown without colour.
+- The number box used by Databars is now a shared widget (`W.NumberBox`).
+
 ## [0.27.0]
 - Nameplates > Health Colors: new threat colour "Tank: another tank has aggro" (off-tank, on by default). Same method as EllesmereUI: the mob's target has the tank role, or (when the game hides it) another tank in the group is tanking the mob, folded with Blizzard's C_CurveUtil so secret values are never read.
 

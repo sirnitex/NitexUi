@@ -45,6 +45,7 @@ local UnitDetailedThreatSituation = UnitDetailedThreatSituation
 local UnitGroupRolesAssigned, UnitIsUnit, IsInRaid, GetNumGroupMembers, type =
       UnitGroupRolesAssigned, UnitIsUnit, IsInRaid, GetNumGroupMembers, type
 local EvalBool = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean
+local CreateColorCurve = C_CurveUtil and C_CurveUtil.CreateColorCurve
 
 ---------------------------------------------------------------------------
 -- Defaults
@@ -57,7 +58,8 @@ ns.defaults.nameplates.colors = {
     threat = {
         enabled = true,
         groupOnly = true,
-        percent = false, -- "| 100%" beside the name (your scaled threat on that mob)
+        percent = false, -- "| 100%" right after the mob name (your scaled threat on that mob)
+        percentColor = true, -- colour the number green..red (only when the value is not secret)
         good    = { enabled = true, color = C(0.20, 0.80, 0.30) }, -- tank: you hold aggro.   others: (not used)
         warning = { enabled = true, color = C(1.00, 0.60, 0.10) }, -- aggro is about to change
         danger  = { enabled = true, color = C(0.95, 0.15, 0.15) }, -- tank: you lost aggro.   others: you have aggro
@@ -333,20 +335,71 @@ local function GetHealthBar(plate)
     return uf.healthBar or (uf.HealthBarsContainer and uf.HealthBarsContainer.healthBar)
 end
 
--- Threat % beside the name: Blizzard's own scaled percentage (100 = you have aggro).
--- Only text is set; a secret percentage is handed straight to SetFormattedText, never compared.
+-- Threat % right after the mob name, same font and size as the name: "| 100%".
+-- Number colour: 100 green, 66 yellow, 33 orange, 0 red (Blizzard's ColorCurve, built once).
+-- Addon code may not evaluate a curve with a secret value: a secret percentage is shown
+-- uncoloured, handed straight to SetFormattedText and never compared.
+local pctCurve
+local function GetCurve()
+    if pctCurve ~= nil then return pctCurve end
+    pctCurve = false
+    if CreateColorCurve and CreateColor then
+        local c = CreateColorCurve()
+        if c and c.AddPoint and c.EvaluateUnpacked then
+            if c.SetType and Enum.LuaCurveType then c:SetType(Enum.LuaCurveType.Linear) end
+            c:AddPoint(0,    CreateColor(0.95, 0.15, 0.15))
+            c:AddPoint(0.33, CreateColor(1.00, 0.50, 0.10))
+            c:AddPoint(0.66, CreateColor(1.00, 0.85, 0.15))
+            c:AddPoint(1,    CreateColor(0.20, 0.80, 0.30))
+            pctCurve = c
+        end
+    end
+    return pctCurve
+end
+
 local function GetPercentText(s)
     local fs = s.pct
     if fs then return fs end
     local uf = s.uf
-    local name = uf and uf.name
-    if not name then return nil end
+    if not (uf and uf.name) then return nil end
     fs = uf:CreateFontString(nil, "OVERLAY")
-    local obj = name:GetFontObject()
-    if obj then fs:SetFontObject(obj) else fs:SetFont(name:GetFont()) end
-    fs:SetPoint("LEFT", name, "RIGHT", 2, 0)
+    fs:SetTextColor(1, 1, 1)
     s.pct = fs
     return fs
+end
+
+-- Same font as the name, placed where the name's text ends (the name can be wider than its
+-- text and centred). Only re-done when the name's font or text width changes.
+local function FollowName(s, fs)
+    local name = s.uf.name
+    local path, size, flags = name:GetFont()
+    if path and not issecretvalue(size) and (size ~= s.pctSize or path ~= s.pctPath) then
+        local obj = name:GetFontObject()
+        if obj then fs:SetFontObject(obj) end
+        fs:SetFont(path, size, flags)
+        s.pctSize, s.pctPath = size, path
+    end
+    local w, nw = name:GetStringWidth(), name:GetWidth()
+    if issecretvalue(w) or issecretvalue(nw) then
+        if s.pctW ~= false then
+            s.pctW = false
+            fs:ClearAllPoints()
+            fs:SetPoint("LEFT", name, "RIGHT", 2, 0)
+        end
+        return
+    end
+    if nw > 0 and w > nw then w = nw end
+    if w == s.pctW then return end
+    s.pctW = w
+    fs:ClearAllPoints()
+    local j = name:GetJustifyH()
+    if j == "LEFT" then
+        fs:SetPoint("LEFT", name, "LEFT", w + 2, 0)
+    elseif j == "RIGHT" then
+        fs:SetPoint("LEFT", name, "RIGHT", 2, 0)
+    else
+        fs:SetPoint("LEFT", name, "CENTER", w / 2 + 2, 0)
+    end
 end
 
 local function UpdatePercent(unit)
@@ -359,10 +412,24 @@ local function UpdatePercent(unit)
         local _, _, p = UnitDetailedThreatSituation("player", unit)
         pct = p
     end
-    if issecretvalue(pct) or pct then
+    if issecretvalue(pct) then
         local fs = GetPercentText(s)
         if fs then
+            FollowName(s, fs)
             fs:SetFormattedText("|| %.0f%%", pct) -- "||" = a literal "|" in WoW text
+            fs:Show()
+        end
+    elseif pct then
+        local fs = GetPercentText(s)
+        if fs then
+            FollowName(s, fs)
+            local curve = t.percentColor and GetCurve()
+            if curve then
+                local r, g, b = curve:EvaluateUnpacked(pct / 100)
+                fs:SetFormattedText("|| |cff%02x%02x%02x%.0f%%|r", r * 255, g * 255, b * 255, pct)
+            else
+                fs:SetFormattedText("|| %.0f%%", pct)
+            end
             fs:Show()
         end
     elseif s.pct then
@@ -400,6 +467,7 @@ local function Attach(unit)
         hooksecurefunc(bar, "SetStatusBarColor", OnSetStatusBarColor)
     end
     s.uf = plate.UnitFrame
+    s.pctW = nil -- new mob: measure the name again
     s.color = nil
     active[unit] = bar
     Update(unit, true)
