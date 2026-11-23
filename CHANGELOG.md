@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.27.0]
+- Nameplates > Health Colors: new threat colour "Tank: another tank has aggro" (off-tank, on by default). Same method as EllesmereUI: the mob's target has the tank role, or (when the game hides it) another tank in the group is tanking the mob, folded with Blizzard's C_CurveUtil so secret values are never read.
+
 ## [0.26.0]
 - Nameplates > Health Colors: new option "Show threat % by the name" (off by default). Shows "| 100%" after the name; 100% = you have aggro. Updates on Blizzard's threat events only, follows "Only in groups".
 

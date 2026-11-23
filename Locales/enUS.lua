@@ -139,6 +139,7 @@ L["OPT_THREAT_PERCENT_DESC"] = "Adds \"|| 100%\" after the name. 100% = you have
 L["THREAT_GOOD"] = "Tank: you have aggro"
 L["THREAT_WARNING"] = "Aggro is changing"
 L["THREAT_DANGER"] = "Tank lost / you have aggro"
+L["THREAT_OFFTANK"] = "Tank: another tank has aggro"
 L["OPT_QUEST"] = "Quest mobs"
 L["TYPE_WORLDBOSS"] = "Worldboss"
 L["TYPE_ELITEBOSS"] = "Elite Boss"

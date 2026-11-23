@@ -42,6 +42,9 @@ local UnitIsLieutenant, UnitEffectiveLevel, UnitHasPowerType = UnitIsLieutenant,
 local MANA = Enum and Enum.PowerType and Enum.PowerType.Mana
 local UnitReaction, UnitIsEnemy, UnitAffectingCombat = UnitReaction, UnitIsEnemy, UnitAffectingCombat
 local UnitDetailedThreatSituation = UnitDetailedThreatSituation
+local UnitGroupRolesAssigned, UnitIsUnit, IsInRaid, GetNumGroupMembers, type =
+      UnitGroupRolesAssigned, UnitIsUnit, IsInRaid, GetNumGroupMembers, type
+local EvalBool = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean
 
 ---------------------------------------------------------------------------
 -- Defaults
@@ -58,6 +61,7 @@ ns.defaults.nameplates.colors = {
         good    = { enabled = true, color = C(0.20, 0.80, 0.30) }, -- tank: you hold aggro.   others: (not used)
         warning = { enabled = true, color = C(1.00, 0.60, 0.10) }, -- aggro is about to change
         danger  = { enabled = true, color = C(0.95, 0.15, 0.15) }, -- tank: you lost aggro.   others: you have aggro
+        offtank = { enabled = true, color = C(0.19, 0.76, 0.81) }, -- tank: another tank has aggro
     },
     quest = { enabled = true, color = C(0.35, 0.75, 1.00) },
     typesVersion = 4,
@@ -77,7 +81,7 @@ ns.defaults.nameplates.colors = {
 -- Neutral is listed last but checked first: a neutral mob out of combat gets it; once it
 -- fights it uses the colours above like any enemy.
 M.typeOrder = { "worldboss", "eliteboss", "elitemini", "rareelite", "rare", "caster", "enemy", "neutral" }
-M.threatOrder = { "good", "warning", "danger" }
+M.threatOrder = { "good", "warning", "danger", "offtank" }
 
 -- Profiles saved before 0.15.1 had other enemy types: replace them once with the new set.
 -- 0.15.3 merged Mini Enemy into Enemy.
@@ -130,6 +134,79 @@ end
 
 local function Known(v) return v ~= nil and not issecretvalue(v) end
 
+---------------------------------------------------------------------------
+-- Off-tank (tank role only), as EllesmereUI does it:
+--   1. Plain: the mob's target has the TANK role -> off-tank colour.
+--   2. Secret (Midnight instances: roles and isTanking can be secret): ask the other way
+--      round, "is another tank tanking this mob", with UnitDetailedThreatSituation(tank, mob)
+--      and fold the answer through C_CurveUtil.EvaluateColorValueFromBoolean. The result may
+--      be SECRET r,g,b: only handed to SetStatusBarColor, never compared or formatted.
+--   One tank holds a mob, so the fold starts from your threat colour and flips to the
+--   off-tank colour only when another tank's isTanking is true.
+-- Other tanks: up to 3 group members with the TANK role, rebuilt lazily after roster/role events.
+---------------------------------------------------------------------------
+local tanks, tanksDirty = {}, true
+local targetOf = setmetatable({}, { __index = function(t, k) local v = k .. "target"; t[k] = v; return v end })
+local folds = {} -- [unitToken] = { r, g, b } reused per plate token
+
+local function RebuildTanks()
+    tanksDirty = false
+    wipe(tanks)
+    local prefix, count
+    if IsInRaid() then prefix, count = "raid", GetNumGroupMembers()
+    elseif IsInGroup() then prefix, count = "party", GetNumGroupMembers() - 1 end
+    if not prefix then return end
+    local n = 0
+    for i = 1, count do
+        if n >= 3 then break end
+        local tok = prefix .. i
+        if not UnitIsUnit(tok, "player") and UnitGroupRolesAssigned(tok) == "TANK" then
+            n = n + 1
+            tanks[n] = tok
+        end
+    end
+end
+
+local function OffTankFold(unit, base, ot)
+    if not EvalBool then return nil end
+    if tanksDirty then RebuildTanks() end
+    if not tanks[1] then return nil end
+    local r, g, b = base[1], base[2], base[3]
+    local o1, o2, o3 = ot[1], ot[2], ot[3]
+    local any = false
+    for i = 1, #tanks do
+        local isTanking = UnitDetailedThreatSituation(tanks[i], unit)
+        if type(isTanking) == "boolean" then -- type() is allowed on secrets
+            r = EvalBool(isTanking, o1, r)
+            g = EvalBool(isTanking, o2, g)
+            b = EvalBool(isTanking, o3, b)
+            any = true
+        end
+    end
+    if not any then return nil end
+    local f = folds[unit]
+    if not f then f = {}; folds[unit] = f end
+    f[1], f[2], f[3] = r, g, b
+    return f
+end
+
+-- Returns colour, isFold (a fold must always be repainted: same table, new values).
+local function TankThreat(unit, status)
+    local t = db.threat
+    local ot = t.offtank
+    if not ot.enabled then return ThreatColor(status) end
+    if status < 2 then -- you are not tanking it
+        local role = UnitGroupRolesAssigned(targetOf[unit])
+        if not issecretvalue(role) and role == "TANK" then return ot.color end
+    end
+    local base = ThreatColor(status)
+    if base then
+        local f = OffTankFold(unit, base, ot.color)
+        if f then return f, true end
+    end
+    return base
+end
+
 -- Boss tiers come from the mob's effective level compared to yours (handles level scaling
 -- and Chromie Time): a skull (-1) or 2+ levels above = boss, 1 above or a lieutenant = mini-boss.
 local function BossTier(unit, cls)
@@ -181,8 +258,9 @@ local function Compute(unit)
     if t.enabled and (not t.groupOnly or inGroup) then
         local status = UnitThreatSituation("player", unit)
         if status ~= nil and not issecretvalue(status) then
-            local c = ThreatColor(status)
-            if c then return c end
+            local c, fold
+            if isTank then c, fold = TankThreat(unit, status) else c = ThreatColor(status) end
+            if c then return c, fold end
         end
     end
 
@@ -296,8 +374,8 @@ local function Update(unit, force)
     local bar = active[unit]
     if not bar then return end
     local s = state[bar]
-    local c = Compute(unit)
-    if c == s.color and not force then return end
+    local c, fold = Compute(unit)
+    if c == s.color and not force and not fold then return end
     s.color = c
     if c then Paint(bar, c) else RestoreBlizzard(bar, s) end
 end
@@ -362,12 +440,13 @@ end
 
 -- Fires for every roster change in a raid; only joining/leaving a group changes our colours.
 function M:GROUP_ROSTER_UPDATE()
+    tanksDirty = true
     local g = IsInGroup()
     if g == inGroup then return end
     inGroup = g
     UpdateAll()
 end
-function M:RoleChanged() UpdateRole(); UpdateAll() end
+function M:RoleChanged() tanksDirty = true; UpdateRole(); UpdateAll() end
 
 local EVENTS = {
     NAME_PLATE_UNIT_ADDED = "NAME_PLATE_UNIT_ADDED",
@@ -432,6 +511,8 @@ function M:OnDisable()
     RefreshOptionalEvents() -- self.enabled is false here: removes them
     for unit in next, active do Detach(unit) end
     wipe(active)
+    wipe(folds)
+    wipe(tanks); tanksDirty = true
     wipe(state) -- hooks left from this session now return on their first check
 end
 
@@ -460,8 +541,9 @@ function M:Debug()
     P("Classification:", Show(UnitClassification(unit)), "| Level:", Show(UnitEffectiveLevel(unit)),
       "| Mana:", Show(MANA and UnitHasPowerType and UnitHasPowerType(unit, MANA)))
     if self.enabled and db then
-        local c = Compute(unit)
-        P("Our colour:", c and ("%.2f %.2f %.2f"):format(c[1], c[2], c[3]) or "none (Blizzard's)")
+        local c, fold = Compute(unit)
+        if fold then P("Our colour: off-tank fold (may be secret)")
+        else P("Our colour:", c and ("%.2f %.2f %.2f"):format(c[1], c[2], c[3]) or "none (Blizzard's)") end
     end
     if bar then
         local r, g, b = bar:GetStatusBarColor()
